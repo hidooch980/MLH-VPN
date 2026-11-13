@@ -221,6 +221,8 @@ class AccountStore:
         if type(max_devices) is not int or not 1 <= max_devices <= 100:
             raise AccountStoreError("Device limit must be between 1 and 100.")
         expiry = self._parse_expiry(expires_at)
+        if status in ("trial", "active") and expiry is None:
+            raise AccountStoreError("Trial and active subscriptions require an explicit expiry.")
         normalized_expiry = expiry.isoformat() if expiry else None
         with self._connect() as db:
             if db.execute("SELECT 1 FROM accounts WHERE user_id = ?", (user_id,)).fetchone() is None:
@@ -247,4 +249,4 @@ class AccountStore:
         current = now or datetime.now(timezone.utc)
         if current.tzinfo is None or current.utcoffset() is None:
             raise AccountStoreError("Entitlement checks require a timezone-aware clock.")
-        return expiry is None or expiry > current.astimezone(timezone.utc)
+        return expiry is not None and expiry > current.astimezone(timezone.utc)
