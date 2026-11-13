@@ -81,13 +81,14 @@ class DeviceRegistry:
                     device_name TEXT NOT NULL,
                     platform TEXT NOT NULL CHECK(platform IN ('android','ios','windows','macos')),
                     public_key TEXT NOT NULL UNIQUE,
-                    assigned_ip TEXT NOT NULL UNIQUE,
+                    assigned_ip TEXT NOT NULL,
                     status TEXT NOT NULL CHECK(status IN ('active','revoked')),
                     created_at TEXT NOT NULL,
                     revoked_at TEXT
                 )
             """)
             db.execute("CREATE INDEX IF NOT EXISTS devices_user_status_idx ON devices(user_id,status)")
+            db.execute("CREATE UNIQUE INDEX IF NOT EXISTS devices_active_ip_unique ON devices(assigned_ip) WHERE status = 'active'")
 
     def _allocate_ip(self, db: sqlite3.Connection) -> str:
         used = {
