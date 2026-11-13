@@ -1,0 +1,9 @@
+---
+molla_vpn_interface: wg0
+molla_vpn_address: 10.66.0.1/24
+molla_vpn_network: 10.66.0.0/24
+molla_vpn_listen_port: 51820
+molla_vpn_uplink_interface: "{{ ansible_default_ipv4.interface }}"
+molla_vpn_manage_service: true
+molla_vpn_private_key_path: /etc/wireguard/server.key
+molla_vpn_config_path: /etc/wireguard/wg0.conf
