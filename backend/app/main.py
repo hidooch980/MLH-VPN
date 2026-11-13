@@ -4,11 +4,11 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.protocols import public_protocol_catalog
+from app.protocols import public_protocol_catalog, public_smart_selection_policy
 
 app = FastAPI(
     title="Molla VPN Control Plane API",
-    version="0.2.0",
+    version="0.3.0",
     description="Control-plane API. VPN traffic is not routed by this service.",
 )
 
@@ -57,6 +57,7 @@ def health() -> dict[str, object]:
 def list_protocols() -> dict[str, object]:
     """Return public protocol metadata; this does not provision VPN access."""
     return {
-        "catalog_version": "1",
+        "catalog_version": "2",
         "items": public_protocol_catalog(),
+        "connection_selection": public_smart_selection_policy(),
     }

@@ -1,6 +1,6 @@
-# API Contract v0.2
+# API Contract v0.3
 
-Status: authenticated pilot-control-plane routes implemented behind explicit runtime signing-key configuration. Not a production VPN service.
+Status: authenticated pilot-control-plane routes and public protocol policy metadata are implemented. This is not a production VPN service.
 
 ## System
 
@@ -8,7 +8,14 @@ Status: authenticated pilot-control-plane routes implemented behind explicit run
 Returns service health, stage and whether authenticated routes are enabled. It does not expose secrets, environment variables or hostnames.
 
 ### GET /api/v1/protocols
-Returns protocol metadata only. Every protocol remains disabled until its data plane is deployed and verified.
+Returns protocol metadata and the product's smart-selection policy. This endpoint is informational only; it does not provision or enable VPN tunnels.
+
+Response shape:
+- `catalog_version`: `2`
+- `items`: six protocol descriptors (WireGuard, VLESS + REALITY, Hysteria 2, TUIC, AmneziaWG and Shadowsocks 2022)
+- `connection_selection`: `mode=automatic`, `enabled=true`, `runtime_ready=false`, candidate-selection inputs and mandatory safety rules.
+
+All six entries currently report `status=planned`, `enabled=false`, and `traffic_plane_ready=false`. sing-box is an engine/integration layer for selected protocols, not a catalog protocol.
 
 ## Runtime configuration
 
@@ -39,8 +46,9 @@ Login rate limiting is persisted in SQLite: eight failed attempts within five mi
 - Payment/billing integration
 - Server inventory and health API
 - Client configuration/profile issuance
-- Live WireGuard peer reconciliation or tunnel termination on revocation
+- Live peer reconciliation or tunnel termination on revocation
 - Native VPN adapters and production traffic routing
+- Runtime smart protocol selector, endpoint probes, telemetry pipeline or automatic failover
 
 Device enrollment stores a public key and allocates a private-network IPv4 address. It does not issue a VPN configuration or activate a peer on a server. Revocation currently changes registry state only.
 
@@ -54,3 +62,4 @@ Device enrollment stores a public key and allocates a private-network IPv4 addre
 - Enforce subscription/device limits server-side.
 - Add pagination, request IDs and structured redacted logs.
 - Complete data-retention, deletion, privacy and legal review.
+- Validate every protocol/platform adapter and keep kill-switch protection active through reconnect/failover.

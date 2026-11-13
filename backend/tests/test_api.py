@@ -21,14 +21,29 @@ def test_protocol_catalog_is_explicitly_planned_and_disabled():
     response = client.get("/api/v1/protocols")
     assert response.status_code == 200
     payload = response.json()
-    assert payload["catalog_version"] == "1"
+    assert payload["catalog_version"] == "2"
     items = payload["items"]
     assert [item["id"] for item in items] == [
         "wireguard",
-        "sing-box",
         "vless-reality",
         "hysteria2",
+        "tuic",
+        "amneziawg",
+        "shadowsocks-2022",
     ]
+    assert {item["id"]: item["role"] for item in items} == {
+        "wireguard": "primary",
+        "vless-reality": "fallback",
+        "hysteria2": "fallback",
+        "tuic": "fallback",
+        "amneziawg": "specialized",
+        "shadowsocks-2022": "specialized",
+    }
+    selection = payload["connection_selection"]
+    assert selection["mode"] == "automatic"
+    assert selection["enabled"] is True
+    assert selection["runtime_ready"] is False
+    assert "preserve_kill_switch_during_reconnect" in selection["safety_rules"]
     assert all(item["enabled"] is False for item in items)
     assert all(item["status"] == "planned" for item in items)
     assert all(item["traffic_plane_ready"] is False for item in items)
