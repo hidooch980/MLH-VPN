@@ -1,10 +1,43 @@
 ---
-- name: Require a detected uplink interface
+- name: Validate WireGuard interface and port settings
   ansible.builtin.assert:
     that:
+      - molla_vpn_interface is match('^[A-Za-z0-9_=+.-]{1,15}$')
+      - molla_vpn_listen_port | int >= 1
+      - molla_vpn_listen_port | int <= 65535
       - molla_vpn_uplink_interface is defined
       - molla_vpn_uplink_interface | length > 0
-    fail_msg: "No uplink interface detected; set molla_vpn_uplink_interface explicitly."
+      - molla_vpn_uplink_interface != molla_vpn_interface
+    fail_msg: "WireGuard interface, UDP port, or uplink interface is invalid."
+
+- name: Check whether the target WireGuard config already exists
+  ansible.builtin.stat:
+    path: "{{ molla_vpn_config_path }}"
+  register: molla_wg_config_stat
+
+- name: Check whether an existing config belongs to this role
+  ansible.builtin.command:
+    argv:
+      - grep
+      - -Fqx
+      - "{{ molla_vpn_managed_config_marker }}"
+      - "{{ molla_vpn_config_path }}"
+  register: molla_wg_config_marker_check
+  changed_when: false
+  failed_when: false
+  no_log: true
+  when: molla_wg_config_stat.stat.exists
+
+- name: Refuse to overwrite an unmanaged WireGuard config
+  ansible.builtin.assert:
+    that:
+      - >-
+        not molla_wg_config_stat.stat.exists
+        or (molla_vpn_allow_config_overwrite | bool)
+        or (molla_wg_config_marker_check.rc | default(1)) == 0
+    fail_msg: >-
+      Existing WireGuard config is not managed by Molla VPN. Back it up and
+      explicitly review molla_vpn_allow_config_overwrite before replacing it.
 
 - name: Install WireGuard and iptables
   ansible.builtin.apt:
