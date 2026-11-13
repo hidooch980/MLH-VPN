@@ -1,18 +1,20 @@
-# Molla VPN
+# MLH VPN
 
-Molla VPN is an independent, cross-platform VPN product for personal and commercial subscriptions.
+MLH VPN is an independent, cross-platform VPN product for personal and commercial subscriptions.
 
 ## Standalone Android client
 
 The Android implementation now has a pinned v2rayNG 2.3.15 build overlay with the
-upstream protocol/import/VPN implementation, branded Molla VPN. It requires **no
-Molla backend or newly provisioned server**: import an existing VPN provider's
+upstream protocol/import/VPN implementation, branded MLH VPN. It requires **no
+MLH backend or newly provisioned server**: import an existing VPN provider's
 configuration or subscription. A remote VPN/proxy endpoint is still necessary.
 
 See [Android build/source](apps/android/README.md), [Persian installation guide](apps/android/INSTALL.fa.md)
 and the **Standalone Android APK** workflow for installable development builds.
 The generated Android derivative and overlay are GPL-3.0; upstream notices are retained.
 Actual connectivity and leak testing require an Android device and valid endpoints.
+
+The app includes two community subscription sources with hourly background updates and supports importing WARP-style WireGuard profiles. See [sources and compatibility limits](apps/android/SOURCES.md). WARP enrollment/MASQUE and V2Box-specific SSH/DNSTT are not included.
 
 ## Original hosted-service scope
 

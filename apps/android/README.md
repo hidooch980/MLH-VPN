@@ -1,8 +1,8 @@
-# Molla VPN — standalone Android
+# MLH VPN — standalone Android
 
 This is a reproducible branding/build overlay for **v2rayNG 2.3.15**. It runs locally on Android 7+ without the Molla FastAPI service, an account, billing, or a server deployment. Import an existing provider's configuration to connect. It does not create free servers or provide connectivity without a remote endpoint.
 
-The exact upstream commit, native core checksum, application ID and toolchain are recorded in `upstream.lock.json`. No tunnel, parser, transport, subscription or routing implementation is replaced. The native app is the Android product; `../client` remains the earlier Flutter prototype.
+The exact upstream commit, native core checksum, application ID and toolchain are recorded in `upstream.lock.json`. The tunnel, parser, transport and routing implementations are retained. A one-time catalog adds two public subscriptions to the existing storage and hourly updater; user deletions and preferences are preserved. See [SOURCES.md](SOURCES.md). The native app is the Android product; `../client` remains the earlier Flutter prototype.
 
 ## Compatibility
 
@@ -30,7 +30,7 @@ bash apps/android/build.sh "$PWD/work/android" debug
 
 Use a fresh upstream checkout for each overlay application: it deliberately refuses dirty source. `Standalone Android APK` runs the same build in GitHub Actions and uploads APKs, tests, source and SHA-256 checksums. The debug build uses an automatically generated development key, not a production identity. Builds from different runners may require uninstall/reinstall; export profiles first. Do not distribute this preview as a signed production release. Release builds are unsigned until signed with your own protected key; no private signing key is stored here.
 
-The application ID is `io.github.hidooch980.mollavpn.fdroid`, so the preview can coexist with official v2rayNG. The Kotlin namespace intentionally stays `com.v2ray.ang` for JNI compatibility. App name/output names and update/source/privacy URLs point to Molla; the upstream promotional destination is replaced by this repository. Upstream credits and translation acknowledgements remain.
+The application ID is `io.github.hidooch980.mlhvpn.fdroid`, so the preview can coexist with official v2rayNG. The Kotlin namespace intentionally stays `com.v2ray.ang` for JNI compatibility. App name/output names and update/source/privacy URLs point to Molla; the upstream promotional menu is replaced by official WARP setup guidance. Upstream credits and translation acknowledgements remain.
 
 ## License and source
 

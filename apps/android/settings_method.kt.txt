@@ -1,0 +1,19 @@
+    /** Called by MainRepository from the ViewModel-owned IO initialization job. */
+    fun ensureCommunitySubscriptions() {
+        CommunitySubscriptions.installOnce(object : CommunitySubscriptions.Store {
+            override fun isInstalled() = MmkvManager.decodeSettingsBool(CommunitySubscriptions.INSTALLED_KEY, false)
+            override fun current() = MmkvManager.decodeSubscriptions().associate { it.guid to it.subscription }
+            override fun put(id: String, item: SubscriptionItem) {
+                MmkvManager.encodeSubscription(id, item)
+                check(MmkvManager.decodeSubscription(id) == item && id in MmkvManager.decodeSubsList()) {
+                    "Community subscription storage failed"
+                }
+            }
+            override fun remove(id: String) { MmkvManager.removeSubscription(id) }
+            override fun markInstalled() {
+                check(MmkvManager.encodeSettings(CommunitySubscriptions.INSTALLED_KEY, true)) {
+                    "Community subscription marker failed"
+                }
+            }
+        })
+    }
