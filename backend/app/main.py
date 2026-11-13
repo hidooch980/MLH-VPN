@@ -8,7 +8,7 @@ from app.protocols import public_protocol_catalog, public_smart_selection_policy
 
 app = FastAPI(
     title="Molla VPN Control Plane API",
-    version="0.2.0",
+    version="0.3.0",
     description="Control-plane API. VPN traffic is not routed by this service.",
 )
 
