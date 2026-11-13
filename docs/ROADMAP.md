@@ -23,6 +23,7 @@
 - [x] Add password hashing and short-lived access-token primitives.
 - [x] Add persistent account, session and subscription storage primitives.
 - [x] Add session revocation, account suspension and subscription expiry checks.
+- [x] Add account-scoped device enrollment, subscription device-limit enforcement and transactional IPv4 allocation.
 - [ ] Add verified registration, login/logout/current-user APIs and persistent rate limiting.
 - [ ] Add admin bootstrap, MFA/recovery policy, signing-key rotation and audit events.
 - [ ] Bind devices/peers to account ownership and enforce device/plan limits.
