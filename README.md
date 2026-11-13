@@ -11,21 +11,27 @@ Molla VPN is an independent, cross-platform VPN product for personal and commerc
 
 ## Project status
 
-**Bootstrap stage — not production-ready.** No VPN server, client tunnel, subscription billing, or Cloudflare resource has been deployed yet. Do not use this repository as evidence of a live VPN service.
+**Development foundation — not production-ready and not yet a usable VPN service.** The development foundation has been merged into `main`, but the repository does not yet contain a live VPN node, a native tunnel adapter, customer configuration issuance, billing, or verified end-to-end VPN traffic. Protocols remain disabled and the client connection control remains unavailable.
 
 ## Repository structure
 
-- `apps/client/`: Flutter client shell (no real tunnel adapter yet)
-- `backend/`: FastAPI control-plane scaffold
-- `docs/`: architecture, protocol evaluation, API contract, roadmap and decisions
-- `.github/workflows/`: backend and client CI
+- `apps/client/`: Flutter client shell; native VPN adapters are not implemented
+- `backend/`: FastAPI scaffold, authentication primitives, persistent account/session/subscription store and account-scoped device registry
+- `infra/ansible/`: guarded WireGuard server provisioning template; not executed against a production node
+- `docs/`: architecture, reference analysis, API contract, audit, roadmap and deployment gates
+- `.github/workflows/`: backend, client, infrastructure, dependency/static security and CodeQL CI
+- `.github/dependabot.yml`: automated dependency update proposals
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/API_CONTRACT.md](docs/API_CONTRACT.md), and [docs/ROADMAP.md](docs/ROADMAP.md).
+## CI and security
+
+CI checks source/tests and infrastructure syntax only. Security automation includes Python dependency auditing, Bandit static checks and CodeQL analysis. A green workflow does not establish that a VPN tunnel is live or production-secure. Review every dependency update and security finding before merge.
 
 ## Security
 
-Never commit credentials, private keys, subscription tokens, server addresses that are intended to remain private, or production user data. Use GitHub Actions secrets and a managed secret store.
+Never commit credentials, private keys, subscription tokens, real production endpoints intended to remain private, or production user data. Use deployment secrets and a managed secret store. Client private keys must be generated and retained on client devices; only public keys may be sent to the control plane.
 
-## License
+## Licensing
 
-Not selected yet. All rights reserved unless a license is added explicitly.
+The project license has not been selected. Do not import code from the AGPL-3.0 MSN-GUARD reference project unless the project explicitly adopts the applicable license obligations after legal review. All rights reserved unless a license is added explicitly.
+
+See [the current audit](docs/AUDIT_2026-11-13.md), [architecture](docs/ARCHITECTURE.md), [API contract](docs/API_CONTRACT.md), and [roadmap](docs/ROADMAP.md).
