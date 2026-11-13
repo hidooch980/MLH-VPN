@@ -20,3 +20,7 @@ Standard VLESS/VMess/Trojan/Shadowsocks/SOCKS/HTTP/WireGuard/Hysteria2 links and
 The existing WireGuard importer accepts a user's valid WARP-style `.conf` or `wireguard://` profile, including endpoint, addresses, DNS, private/public keys and reserved bytes. A synthetic regression test checks these fields; it is not a live Cloudflare test. Import from the main + menu. WARP account enrollment and MASQUE integration are not implemented. There are no shared WARP private keys in this application. For new enrollment, use the WARP setup menu linking to Cloudflare's official Android instructions. The official WARP app is separate and cannot run as a second simultaneous Android VPN alongside MLH.
 
 Cloudflare's [mode documentation](https://developers.cloudflare.com/warp-client/warp-modes/) distinguishes DNS-only 1.1.1.1 from a WARP traffic tunnel. Selecting 1.1.1.1 DNS in MLH does not by itself enable WARP.
+
+## Free account providers and additional engines
+
+See [the Persian integration status and import guide](FREE-SERVICES.fa.md). Proton Free standard WireGuard exports can use the existing importer, including leading comments and bracketed IPv6 endpoints. Psiphon, Lantern and OpenVPN/VPN Gate are not embedded engines in this release.

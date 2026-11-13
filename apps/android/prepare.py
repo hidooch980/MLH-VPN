@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Apply the MLH branding and community-subscription overlay to an exact, clean upstream checkout.
 
-No protocol, parser, transport, routing, or VPN-service implementation is replaced.
+WireGuard import compatibility is patched; transport, routing and VPN service stay upstream.
 The generated Android application retains upstream's GPL-3.0 license.
 """
 from __future__ import annotations
@@ -96,6 +96,12 @@ def prepare(root: Path) -> None:
         if count != 1:
             raise ValueError(f'Missing WARP menu resource in {locale}')
         changes[path] = content
+
+    # Provider-exported WireGuard files can begin with comments (e.g. Proton).
+    path = project / 'app/src/main/java/com/v2ray/ang/handler/AngConfigManager.kt'
+    changes[path] = replace_once(path.read_text(),
+        'server.startsWith("[Interface]") && server.contains("[Peer]")',
+        'WireguardFmt.isWireguardConfFile(server)')
 
     # Seed public sources in the existing lifecycle-owned IO initialization path.
     path = project / 'app/src/main/java/com/v2ray/ang/handler/SettingsManager.kt'
