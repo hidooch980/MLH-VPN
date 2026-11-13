@@ -5,13 +5,15 @@ from app.main import app
 client = TestClient(app)
 
 
-def test_health_reports_bootstrap_without_claiming_vpn_is_live():
+def test_health_reports_control_plane_without_claiming_vpn_is_live():
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json() == {
+    payload = response.json()
+    assert payload == {
         "status": "ok",
         "service": "molla-vpn-control-plane",
-        "stage": "bootstrap",
+        "stage": "pilot-control-plane",
+        "authenticated_api_enabled": False,
     }
 
 
@@ -37,3 +39,10 @@ def test_protocol_catalog_is_explicitly_planned_and_disabled():
 def test_protocol_catalog_is_read_only():
     response = client.post("/api/v1/protocols")
     assert response.status_code == 405
+
+
+def test_auth_routes_are_not_mounted_without_runtime_signing_secret():
+    assert client.post("/api/v1/auth/login", json={
+        "email": "pilot@example.com",
+        "password": "not-a-real-password",
+    }).status_code == 404
