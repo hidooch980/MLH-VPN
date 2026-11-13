@@ -44,7 +44,8 @@ def test_enrollment_requires_active_account_and_subscription(tmp_path):
         registry.enroll(account.user_id, "Phone", "android", key(5))
 
     accounts = AccountStore(database)
-    accounts.set_subscription(account.user_id, "pilot", "active", 2)
+    future = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+    accounts.set_subscription(account.user_id, "pilot", "active", 2, future)
     accounts.set_account_status(account.user_id, "suspended")
     with pytest.raises(DeviceRegistryError, match="Active account"):
         registry.enroll(account.user_id, "Phone", "android", key(6))
