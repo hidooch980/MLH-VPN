@@ -1,55 +1,56 @@
-# API Contract v0.1
+# API Contract v0.2
 
-Status: draft scaffold contract. Endpoints are not production-ready.
+Status: authenticated pilot-control-plane routes implemented behind explicit runtime signing-key configuration. Not a production VPN service.
 
 ## System
 
 ### GET /health
-Returns service health and deployment stage. This endpoint must not expose secrets, environment variables, hostnames, or internal diagnostics.
-
-## Protocol catalog
+Returns service health, stage and whether authenticated routes are enabled. It does not expose secrets, environment variables or hostnames.
 
 ### GET /api/v1/protocols
-Returns protocol metadata only. An item with `enabled: false` is not provisioned and must not be offered as a usable VPN connection.
+Returns protocol metadata only. Every protocol remains disabled until its data plane is deployed and verified.
 
-Example:
+## Runtime configuration
 
-```json
-{
-  "items": [
-    {"id": "wireguard", "name": "WireGuard", "status": "planned", "enabled": false},
-    {"id": "sing-box", "name": "sing-box", "status": "planned", "enabled": false},
-    {"id": "vless-reality", "name": "VLESS + REALITY", "status": "planned", "enabled": false},
-    {"id": "hysteria2", "name": "Hysteria 2", "status": "planned", "enabled": false}
-  ]
-}
-```
+Authenticated routes are mounted only when `MOLLAVPN_TOKEN_SECRET` is configured with at least 32 UTF-8 bytes. Never commit this secret. The SQLite database path can be set with `MOLLAVPN_DB_PATH` (default `data/molla-vpn.sqlite3`). The pilot IPv4 pool and reserved server address can be set with `MOLLAVPN_DEVICE_NETWORK` and `MOLLAVPN_SERVER_ADDRESS`.
 
-## Planned authenticated API surface
+If the signing secret is absent or too short, account/device routes are not mounted. This is fail-closed. The current implementation uses short-lived HMAC-SHA256 bearer tokens and SQLite-backed revocable sessions. Use TLS at the deployment edge.
 
-These routes are design targets only; do not assume they exist until implemented and tested.
+## Implemented account routes
+
+All routes below require the authenticated API to be enabled.
 
 | Method | Route | Purpose |
 |---|---|---|
-| POST | /api/v1/auth/register | Create an account with verified contact |
-| POST | /api/v1/auth/session | Create a short-lived authenticated session |
-| DELETE | /api/v1/auth/session | Revoke current session |
-| GET | /api/v1/me | Read current account and entitlement summary |
-| GET | /api/v1/devices | List enrolled devices |
-| POST | /api/v1/devices/enroll | Enroll a device using a one-time challenge |
-| DELETE | /api/v1/devices/{device_id} | Revoke a device |
-| GET | /api/v1/servers | List eligible, healthy server capabilities |
-| POST | /api/v1/configurations | Issue a short-lived client configuration |
-| GET | /api/v1/subscription | Read subscription entitlement |
+| POST | /api/v1/auth/login | Authenticate an existing, administrator-provisioned account |
+| GET | /api/v1/auth/me | Read current account and subscription entitlement |
+| POST | /api/v1/auth/logout | Revoke current bearer-token session |
+| GET | /api/v1/devices | List only the current account's devices |
+| POST | /api/v1/devices | Enroll a device using its client-generated WireGuard public key |
+| DELETE | /api/v1/devices/{device_id} | Revoke a device belonging to the current account |
 
-## Security requirements before implementation
+Login rate limiting is persisted in SQLite: eight failed attempts within five minutes trigger a 15-minute block for the email/IP key. The limit is deliberately applied without trusting forwarded IP headers.
 
-- Use TLS, secure session cookies or carefully scoped bearer tokens, CSRF protection where cookies are used, rate limits and abuse controls.
-- Require verified account ownership before issuing a device configuration.
+## Deliberately not implemented
+
+- Public registration and email verification
+- Administrator bootstrap and privileged account-management API
+- MFA, recovery, audit-event pipeline and signing-key rotation
+- Payment/billing integration
+- Server inventory and health API
+- Client configuration/profile issuance
+- Live WireGuard peer reconciliation or tunnel termination on revocation
+- Native VPN adapters and production traffic routing
+
+Device enrollment stores a public key and allocates a private-network IPv4 address. It does not issue a VPN configuration or activate a peer on a server. Revocation currently changes registry state only.
+
+## Security requirements before production
+
+- Use TLS, secure deployment secrets, key rotation and a managed database/backup strategy.
+- Add verified account ownership, admin MFA/bootstrap, recovery and audited support operations.
+- Apply rate limits to all sensitive operations and add abuse monitoring.
+- Reconcile device/peer state with live nodes and prove revocation stops traffic.
 - Never return server private keys or other users' device data.
-- Make configuration issuance idempotent where possible and auditable.
-- Enforce subscription/device limits on the server, not in the client.
-- Support immediate session, device and configuration revocation.
-- Use generic authentication errors to reduce account enumeration.
-- Add schema validation, pagination, request IDs and structured redacted logs.
-- Document data retention, deletion and lawful requests before pilot launch.
+- Enforce subscription/device limits server-side.
+- Add pagination, request IDs and structured redacted logs.
+- Complete data-retention, deletion, privacy and legal review.
