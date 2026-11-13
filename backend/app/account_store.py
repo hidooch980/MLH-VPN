@@ -1,22 +1,24 @@
 """Persistent account, session and subscription-entitlement primitives.
 
-Passwords are stored only as scrypt hashes. Sessions store token IDs, never bearer
-tokens. This module is not an HTTP API and must be composed with authenticated routes.
+Passwords are stored only as scrypt hashes. Sessions store signed-token IDs, never
+bearer tokens. This repository is deliberately not an HTTP API.
 """
 from __future__ import annotations
 
-import hashlib
+import os
+import re
 import secrets
 import sqlite3
+import time
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
 from app.auth import hash_password, verify_password
 
 
 class AccountStoreError(ValueError):
-    pass
+    """Raised when account or entitlement data fails validation."""
 
 
 @dataclass(frozen=True)
@@ -37,17 +39,21 @@ class Subscription:
 
 
 class AccountStore:
-    """SQLite-backed account and session repository suitable for pilot/dev use."""
+    """SQLite-backed account and session repository suitable for a controlled pilot."""
 
     def __init__(self, database_path: str | Path):
         self.database_path = str(database_path)
-        Path(self.database_path).parent.mkdir(parents=True, exist_ok=True)
+        path = Path(self.database_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
         self._initialize()
+        # Account metadata and password hashes must not be readable by other OS users.
+        os.chmod(path, 0o600)
 
     def _connect(self) -> sqlite3.Connection:
         db = sqlite3.connect(self.database_path, timeout=10)
         db.row_factory = sqlite3.Row
         db.execute("PRAGMA foreign_keys = ON")
+        db.execute("PRAGMA busy_timeout = 10000")
         return db
 
     def _initialize(self) -> None:
@@ -85,9 +91,24 @@ class AccountStore:
         if len(value) > 254 or value.count("@") != 1:
             raise AccountStoreError("A valid email address is required.")
         local, domain = value.split("@")
-        if not local or not domain or "." not in domain or any(ch.isspace() for ch in value):
+        if (not local or not domain or "." not in domain
+                or any(ch.isspace() for ch in value)):
             raise AccountStoreError("A valid email address is required.")
         return value
+
+    @staticmethod
+    def _parse_expiry(expires_at: str | None) -> datetime | None:
+        if expires_at is None:
+            return None
+        if not isinstance(expires_at, str) or len(expires_at) > 64:
+            raise AccountStoreError("Subscription expiry must be an ISO-8601 timestamp.")
+        try:
+            parsed = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise AccountStoreError("Subscription expiry must be an ISO-8601 timestamp.") from exc
+        if parsed.tzinfo is None or parsed.utcoffset() is None:
+            raise AccountStoreError("Subscription expiry must include a timezone.")
+        return parsed.astimezone(timezone.utc)
 
     def create_account(self, email: str, password: str, *, role: str = "user") -> Account:
         normalized = self._normalize_email(email)
@@ -128,9 +149,30 @@ class AccountStore:
             ).fetchone()
         return Account(**dict(row)) if row else None
 
+    def set_account_status(self, user_id: str, status: str) -> Account:
+        if status not in ("active", "suspended"):
+            raise AccountStoreError("Unsupported account status.")
+        now = datetime.now(timezone.utc).isoformat()
+        with self._connect() as db:
+            cursor = db.execute(
+                "UPDATE accounts SET status = ? WHERE user_id = ?", (status, user_id)
+            )
+            if cursor.rowcount != 1:
+                raise AccountStoreError("Account not found.")
+            if status == "suspended":
+                db.execute(
+                    "UPDATE sessions SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL",
+                    (now, user_id),
+                )
+            row = db.execute(
+                "SELECT user_id,email,role,status FROM accounts WHERE user_id = ?", (user_id,)
+            ).fetchone()
+        return Account(**dict(row))
+
     def create_session(self, user_id: str, token_id: str, expires_at: int) -> None:
-        if not token_id or len(token_id) > 128 or type(expires_at) is not int:
-            raise AccountStoreError("Invalid session metadata.")
+        if (not isinstance(token_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{8,128}", token_id)
+                or type(expires_at) is not int or expires_at <= int(time.time())):
+            raise AccountStoreError("Invalid or expired session metadata.")
         with self._connect() as db:
             account = db.execute(
                 "SELECT status FROM accounts WHERE user_id = ?", (user_id,)
@@ -172,12 +214,14 @@ class AccountStore:
 
     def set_subscription(self, user_id: str, plan_code: str, status: str,
                          max_devices: int, expires_at: str | None = None) -> Subscription:
-        if not plan_code or len(plan_code) > 64:
+        if not isinstance(plan_code, str) or not plan_code.strip() or len(plan_code) > 64:
             raise AccountStoreError("Invalid plan code.")
         if status not in ("trial", "active", "expired", "cancelled"):
             raise AccountStoreError("Invalid subscription status.")
         if type(max_devices) is not int or not 1 <= max_devices <= 100:
             raise AccountStoreError("Device limit must be between 1 and 100.")
+        expiry = self._parse_expiry(expires_at)
+        normalized_expiry = expiry.isoformat() if expiry else None
         with self._connect() as db:
             if db.execute("SELECT 1 FROM accounts WHERE user_id = ?", (user_id,)).fetchone() is None:
                 raise AccountStoreError("Account not found.")
@@ -187,10 +231,20 @@ class AccountStore:
                 ON CONFLICT(user_id) DO UPDATE SET
                     plan_code=excluded.plan_code,status=excluded.status,
                     expires_at=excluded.expires_at,max_devices=excluded.max_devices
-            """, (user_id, plan_code, status, expires_at, max_devices))
-        return Subscription(user_id, plan_code, status, expires_at, max_devices)
+            """, (user_id, plan_code.strip(), status, normalized_expiry, max_devices))
+        return Subscription(user_id, plan_code.strip(), status, normalized_expiry, max_devices)
 
     def get_subscription(self, user_id: str) -> Subscription | None:
         with self._connect() as db:
             row = db.execute("SELECT * FROM subscriptions WHERE user_id = ?", (user_id,)).fetchone()
         return Subscription(**dict(row)) if row else None
+
+    def has_active_subscription(self, user_id: str, *, now: datetime | None = None) -> bool:
+        subscription = self.get_subscription(user_id)
+        if subscription is None or subscription.status not in ("trial", "active"):
+            return False
+        expiry = self._parse_expiry(subscription.expires_at)
+        current = now or datetime.now(timezone.utc)
+        if current.tzinfo is None or current.utcoffset() is None:
+            raise AccountStoreError("Entitlement checks require a timezone-aware clock.")
+        return expiry is None or expiry > current.astimezone(timezone.utc)
