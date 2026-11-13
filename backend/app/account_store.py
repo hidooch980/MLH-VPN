@@ -16,6 +16,10 @@ from pathlib import Path
 
 from app.auth import hash_password, verify_password
 
+# Pay the same scrypt cost for an unknown/suspended account as for a bad password.
+# This is not an account credential and is generated once, outside request handling.
+_DUMMY_PASSWORD_HASH = hash_password(secrets.token_urlsafe(32))
+
 
 class AccountStoreError(ValueError):
     """Raised when account or entitlement data fails validation."""
@@ -133,10 +137,12 @@ class AccountStore:
         try:
             normalized = self._normalize_email(email)
         except AccountStoreError:
+            verify_password(password, _DUMMY_PASSWORD_HASH)
             return None
         with self._connect() as db:
             row = db.execute("SELECT * FROM accounts WHERE email = ?", (normalized,)).fetchone()
         if row is None or row["status"] != "active":
+            verify_password(password, _DUMMY_PASSWORD_HASH)
             return None
         if not verify_password(password, row["password_hash"]):
             return None

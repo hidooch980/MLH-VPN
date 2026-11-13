@@ -39,3 +39,11 @@ venv/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Generated standalone Android checkout / SDK state
+work/
+.gradle/
+local.properties
+*.apk
+*.aab
+*.aar

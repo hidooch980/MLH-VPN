@@ -109,7 +109,7 @@ class AccessTokenCodec:
         return f"{signing_input}.{_b64url_encode(signature)}"
 
     def verify(self, token: str, *, now: int | None = None) -> AccessClaims:
-        if not isinstance(token, str) or len(token) > 4096:
+        if not isinstance(token, str) or not token.isascii() or len(token) > 4096:
             raise AuthenticationError("Invalid access token.")
         parts = token.split(".")
         if len(parts) != 3:

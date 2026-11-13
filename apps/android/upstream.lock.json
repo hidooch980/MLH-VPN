@@ -1,0 +1,16 @@
+{
+  "repository": "https://github.com/2dust/v2rayNG.git",
+  "version": "2.3.15",
+  "commit": "57907cf354d9769200ed4717b4430d605abe0952",
+  "core_commit": "2ffe5f794a32ba15b122e177b5acffc6f11c4959",
+  "hev_commit": "c5584feca8f6df70ee53eb2879e034b849a3d15a",
+  "core_url": "https://github.com/2dust/AndroidLibXrayLite/releases/download/v26.10.31/libv2ray.aar",
+  "core_sha256": "2efdf731b1ed624eb1cb0d5a4d0aa95c0672e89f9702226d1ba2dc90308630b6",
+  "application_id": "io.github.hidooch980.mollavpn",
+  "application_version": "0.2.0",
+  "application_version_code": 2,
+  "sdk": "platforms;android-37.0",
+  "build_tools": "37.0.0",
+  "ndk": "30.0.16248370",
+  "java": "21"
+}

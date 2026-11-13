@@ -85,3 +85,25 @@ def test_session_rejects_expired_and_malformed_ids(tmp_path):
         store.create_session(account.user_id, "short", int(time.time()) + 300)
     with pytest.raises(AccountStoreError):
         store.create_session(account.user_id, "session-0001", int(time.time()) - 1)
+
+
+def test_unknown_invalid_and_suspended_accounts_pay_password_hash_cost(tmp_path, monkeypatch):
+    import app.account_store as module
+    store = module.AccountStore(tmp_path / 'timing.sqlite3')
+    user = store.create_account('known@example.com', 'a sufficiently long password')
+    calls = []
+    original = module.verify_password
+
+    def observed(password, encoded):
+        calls.append(encoded)
+        return original(password, encoded)
+
+    monkeypatch.setattr(module, 'verify_password', observed)
+    for email in ['known@example.com', 'missing@example.com', 'not-an-email']:
+        before = len(calls)
+        assert store.authenticate(email, 'incorrect password') is None
+        assert len(calls) == before + 1
+    store.set_account_status(user.user_id, 'suspended')
+    before = len(calls)
+    assert store.authenticate(user.email, 'a sufficiently long password') is None
+    assert len(calls) == before + 1
