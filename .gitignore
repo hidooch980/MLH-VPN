@@ -47,3 +47,9 @@ local.properties
 *.apk
 *.aab
 *.aar
+
+# Never commit signing credentials
+*.pk8
+*.p12
+*private.pem
+signing-backup.tar.gz

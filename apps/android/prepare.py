@@ -99,15 +99,38 @@ def prepare(root: Path) -> None:
 
     # Provider-exported WireGuard files can begin with comments (e.g. Proton).
     path = project / 'app/src/main/java/com/v2ray/ang/handler/AngConfigManager.kt'
-    changes[path] = replace_once(path.read_text(),
+    content = replace_once(path.read_text(),
         'server.startsWith("[Interface]") && server.contains("[Peer]")',
         'WireguardFmt.isWireguardConfFile(server)')
+    changes[path] = replace_once(content, '            LogUtil.i(AppConfig.TAG, url)',
+        '            LogUtil.i(AppConfig.TAG, "Updating subscription id=${it.guid}")')
+
+    path = project / 'app/src/main/java/com/v2ray/ang/handler/SubscriptionUpdater.kt'
+    content = path.read_text()
+    content = replace_once(content,
+        '.filter { it.subscription.autoUpdate && it.subscription.url.isNotEmpty() }',
+        '.filter { SubscriptionRefreshPolicy.shouldSchedule(it.subscription) }')
+    content = replace_once(content, 'if (!subItem.autoUpdate) {',
+        'if (!SubscriptionRefreshPolicy.shouldSchedule(subItem)) {')
+    content = replace_once(content,
+        '            updateLastUpdatedAndReschedule(applicationContext, subId)',
+        '            if (!SubscriptionRefreshPolicy.shouldSchedule(MmkvManager.decodeSubscription(subId))) {\n'
+        '                cancelOne(applicationContext, subId)\n'
+        '                return Result.success()\n'
+        '            }\n'
+        '            // Only the successful import owns lastUpdated; periodic work already bounds retries.')
+    changes[path] = content
 
     # Seed public sources in the existing lifecycle-owned IO initialization path.
     path = project / 'app/src/main/java/com/v2ray/ang/handler/SettingsManager.kt'
     method = (HERE / 'settings_method.kt.txt').read_text()
-    changes[path] = replace_once(path.read_text(), '    private fun ensureDefaultSubscription() {',
+    content = replace_once(path.read_text(), '    private fun ensureDefaultSubscription() {',
                                  method + '\n    private fun ensureDefaultSubscription() {')
+    content = replace_once(content,
+        '        val value = MmkvManager.decodeSettingsString(AppConfig.PREF_REAL_PING_CONCURRENCY)?.toIntOrNull() ?: 16\n'
+        '        return value.coerceIn(1, 128)',
+        '        return boundedRealPingConcurrency(MmkvManager.decodeSettingsString(AppConfig.PREF_REAL_PING_CONCURRENCY))')
+    changes[path] = content
     path = project / 'app/src/main/java/com/v2ray/ang/ui/main/MainRepository.kt'
     changes[path] = replace_once(path.read_text(), '    override fun syncSubscriptions() {',
                                  '    override fun syncSubscriptions() {\n        SettingsManager.ensureCommunitySubscriptions()')

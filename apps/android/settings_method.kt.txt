@@ -18,3 +18,7 @@
             }
         })
     }
+
+    /** Bound imported preferences as well as settings edited through the UI. */
+    internal fun boundedRealPingConcurrency(value: String?): Int =
+        (value?.toIntOrNull() ?: 16).coerceIn(1, 64)
