@@ -39,3 +39,17 @@ venv/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Generated standalone Android checkout / SDK state
+work/
+.gradle/
+local.properties
+*.apk
+*.aab
+*.aar
+
+# Never commit signing credentials
+*.pk8
+*.p12
+*private.pem
+signing-backup.tar.gz

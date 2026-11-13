@@ -51,3 +51,9 @@ def test_token_rejects_invalid_signing_key_and_lifetime():
         AccessTokenCodec(b"too short")
     with pytest.raises(AuthenticationError):
         AccessTokenCodec(b"x" * 32, lifetime_seconds=10)
+
+
+@pytest.mark.parametrize("token", ["é.e.e", "a.سلام.a", "a.a.é", "a.a.a", ".."])
+def test_malformed_tokens_raise_authentication_error(token):
+    with pytest.raises(AuthenticationError):
+        AccessTokenCodec(b"x" * 32).verify(token)
