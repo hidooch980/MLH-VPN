@@ -6,4 +6,6 @@ molla_vpn_listen_port: 51820
 molla_vpn_uplink_interface: "{{ ansible_default_ipv4.interface }}"
 molla_vpn_manage_service: true
 molla_vpn_private_key_path: /etc/wireguard/server.key
-molla_vpn_config_path: /etc/wireguard/wg0.conf
+molla_vpn_config_path: "/etc/wireguard/{{ molla_vpn_interface }}.conf"
+molla_vpn_allow_config_overwrite: false
+molla_vpn_managed_config_marker: "# Managed by Molla VPN Ansible"
