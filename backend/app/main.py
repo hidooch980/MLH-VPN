@@ -1,14 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.protocols import public_protocol_catalog
+
 app = FastAPI(
     title="Molla VPN Control Plane API",
-    version="0.1.0",
+    version="0.1.1",
     description="Initial control-plane scaffold. No VPN traffic is routed by this API.",
 )
 
-# Restrict origins before production deployment. This permissive setting is for local
-# development only and must be replaced with explicit app/admin origins.
+# Local development origins only. Replace with explicit production app/admin origins.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://localhost:8080"],
@@ -17,13 +18,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-PROTOCOLS = [
-    {"id": "wireguard", "name": "WireGuard", "status": "planned", "enabled": False},
-    {"id": "sing-box", "name": "sing-box", "status": "planned", "enabled": False},
-    {"id": "vless-reality", "name": "VLESS + REALITY", "status": "planned", "enabled": False},
-    {"id": "hysteria2", "name": "Hysteria 2", "status": "planned", "enabled": False},
-]
-
 
 @app.get("/health", tags=["system"])
 def health() -> dict[str, str]:
@@ -31,6 +25,9 @@ def health() -> dict[str, str]:
 
 
 @app.get("/api/v1/protocols", tags=["catalog"])
-def list_protocols() -> dict[str, list[dict[str, object]]]:
-    """Return planned protocol metadata; no protocol is enabled in this scaffold."""
-    return {"items": PROTOCOLS}
+def list_protocols() -> dict[str, object]:
+    """Return public protocol metadata; this does not provision VPN access."""
+    return {
+        "catalog_version": "1",
+        "items": public_protocol_catalog(),
+    }
