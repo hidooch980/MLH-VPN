@@ -15,6 +15,8 @@ def setup_account(tmp_path, *, limit=2, status="active", expiry=None):
     database = tmp_path / "molla.sqlite3"
     accounts = AccountStore(database)
     account = accounts.create_account("pilot@example.com", "a sufficiently long password")
+    if expiry is None and status in ("trial", "active"):
+        expiry = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
     accounts.set_subscription(account.user_id, "pilot", status, limit, expiry)
     return database, account
 
