@@ -42,6 +42,8 @@ def test_subscription_entitlements_are_persisted_and_validated(tmp_path):
         store.set_subscription(account.user_id, "bad", "active", 0)
     with pytest.raises(AccountStoreError):
         store.set_subscription(account.user_id, "bad", "active", 1, "2030-01-01T00:00:00")
+    with pytest.raises(AccountStoreError):
+        store.set_subscription(account.user_id, "no-expiry", "active", 1)
 
 
 def test_expired_or_cancelled_subscription_is_not_entitled(tmp_path):
