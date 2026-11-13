@@ -1,0 +1,8 @@
+{{ molla_vpn_managed_config_marker }}
+[Interface]
+Address = {{ molla_vpn_address }}
+ListenPort = {{ molla_vpn_listen_port }}
+PrivateKey = {{ molla_wg_private_key_file.content | b64decode | trim }}
+SaveConfig = false
+PostUp = iptables -A FORWARD -i %i -o {{ molla_vpn_uplink_interface }} -j ACCEPT; iptables -A FORWARD -i {{ molla_vpn_uplink_interface }} -o %i -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT; iptables -t nat -A POSTROUTING -s {{ molla_vpn_network }} -o {{ molla_vpn_uplink_interface }} -j MASQUERADE
+PostDown = iptables -D FORWARD -i %i -o {{ molla_vpn_uplink_interface }} -j ACCEPT; iptables -D FORWARD -i {{ molla_vpn_uplink_interface }} -o %i -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT; iptables -t nat -D POSTROUTING -s {{ molla_vpn_network }} -o {{ molla_vpn_uplink_interface }} -j MASQUERADE

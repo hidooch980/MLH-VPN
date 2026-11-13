@@ -1,0 +1,130 @@
+---
+- name: Validate WireGuard interface and port settings
+  ansible.builtin.assert:
+    that:
+      - molla_vpn_interface is match('^[A-Za-z0-9_=+.-]{1,15}$')
+      - molla_vpn_listen_port | int >= 1
+      - molla_vpn_listen_port | int <= 65535
+      - molla_vpn_uplink_interface is defined
+      - molla_vpn_uplink_interface | length > 0
+      - molla_vpn_uplink_interface != molla_vpn_interface
+    fail_msg: "WireGuard interface, UDP port, or uplink interface is invalid."
+
+- name: Check whether the target WireGuard config already exists
+  ansible.builtin.stat:
+    path: "{{ molla_vpn_config_path }}"
+  register: molla_wg_config_stat
+
+- name: Check whether an existing config belongs to this role
+  ansible.builtin.command:
+    argv:
+      - grep
+      - -Fqx
+      - "{{ molla_vpn_managed_config_marker }}"
+      - "{{ molla_vpn_config_path }}"
+  register: molla_wg_config_marker_check
+  changed_when: false
+  failed_when: false
+  no_log: true
+  when: molla_wg_config_stat.stat.exists
+
+- name: Refuse to overwrite an unmanaged WireGuard config
+  ansible.builtin.assert:
+    that:
+      - >-
+        not molla_wg_config_stat.stat.exists
+        or (molla_vpn_allow_config_overwrite | bool)
+        or (molla_wg_config_marker_check.rc | default(1)) == 0
+    fail_msg: >-
+      Existing WireGuard config is not managed by Molla VPN. Back it up and
+      explicitly review molla_vpn_allow_config_overwrite before replacing it.
+
+- name: Install WireGuard and iptables
+  ansible.builtin.apt:
+    name:
+      - wireguard
+      - wireguard-tools
+      - iptables
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Ensure WireGuard configuration directory exists
+  ansible.builtin.file:
+    path: /etc/wireguard
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Check whether the server private key already exists
+  ansible.builtin.stat:
+    path: "{{ molla_vpn_private_key_path }}"
+  register: molla_wg_key_stat
+
+- name: Generate a server private key in memory
+  ansible.builtin.command:
+    argv:
+      - wg
+      - genkey
+  register: molla_wg_generated_key
+  changed_when: true
+  no_log: true
+  when: not molla_wg_key_stat.stat.exists
+
+- name: Store the generated server private key with restrictive permissions
+  ansible.builtin.copy:
+    content: "{{ molla_wg_generated_key.stdout }}\n"
+    dest: "{{ molla_vpn_private_key_path }}"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+  when: not molla_wg_key_stat.stat.exists
+
+- name: Enforce restrictive permissions on the server private key
+  ansible.builtin.file:
+    path: "{{ molla_vpn_private_key_path }}"
+    state: file
+    owner: root
+    group: root
+    mode: "0600"
+
+- name: Read the server private key for local configuration rendering
+  ansible.builtin.slurp:
+    src: "{{ molla_vpn_private_key_path }}"
+  register: molla_wg_private_key_file
+  no_log: true
+
+- name: Persist IPv4 forwarding configuration
+  ansible.builtin.copy:
+    content: "net.ipv4.ip_forward = 1\n"
+    dest: /etc/sysctl.d/90-molla-vpn.conf
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Enable IPv4 forwarding immediately
+  ansible.builtin.command:
+    argv:
+      - sysctl
+      - -w
+      - net.ipv4.ip_forward=1
+  changed_when: false
+
+- name: Render the WireGuard interface configuration
+  ansible.builtin.template:
+    src: wg0.conf.j2
+    dest: "{{ molla_vpn_config_path }}"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+  notify: Restart WireGuard
+
+- name: Enable and start the WireGuard interface
+  ansible.builtin.systemd:
+    name: "wg-quick@{{ molla_vpn_interface }}"
+    enabled: true
+    state: started
+  when: molla_vpn_manage_service | bool
