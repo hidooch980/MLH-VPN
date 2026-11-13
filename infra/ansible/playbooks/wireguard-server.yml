@@ -1,0 +1,7 @@
+---
+- name: Prepare a Linux node for the Molla VPN WireGuard pilot
+  hosts: vpn_nodes
+  become: true
+  gather_facts: true
+  roles:
+    - wireguard_server
