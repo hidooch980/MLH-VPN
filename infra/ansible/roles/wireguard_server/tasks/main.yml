@@ -49,6 +49,14 @@
   no_log: true
   when: not molla_wg_key_stat.stat.exists
 
+- name: Enforce restrictive permissions on the server private key
+  ansible.builtin.file:
+    path: "{{ molla_vpn_private_key_path }}"
+    state: file
+    owner: root
+    group: root
+    mode: "0600"
+
 - name: Read the server private key for local configuration rendering
   ansible.builtin.slurp:
     src: "{{ molla_vpn_private_key_path }}"
