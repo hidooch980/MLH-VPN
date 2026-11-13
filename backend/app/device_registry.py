@@ -106,7 +106,7 @@ class DeviceRegistry:
         if row is None or row["status"] not in ("trial", "active"):
             return False
         if row["expires_at"] is None:
-            return True
+            return False
         try:
             expiry = datetime.fromisoformat(row["expires_at"].replace("Z", "+00:00"))
         except (TypeError, ValueError):
