@@ -14,4 +14,4 @@ cp -R "$checkout/libs/." "$checkout/V2rayNG/app/libs/"
 printf 'sdk.dir=%s\n' "$ANDROID_HOME" > "$checkout/V2rayNG/local.properties"
 (cd "$checkout/V2rayNG" && ./gradlew --no-daemon licenseFdroidReleaseReport)
 python3 "$android_dir/prepare.py" "$checkout" --notices
-(cd "$checkout/V2rayNG" && ./gradlew --no-daemon :app:testFdroidDebugUnitTest ":app:assembleFdroid$task")
+(cd "$checkout/V2rayNG" && ./gradlew --no-daemon :app:testFdroidDebugUnitTest ":app:assembleFdroid$task" :app:assembleFdroidDebugAndroidTest)
