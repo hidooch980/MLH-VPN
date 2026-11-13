@@ -38,7 +38,7 @@ class MlhStartupTest {
             awaitCondition {
                 WorkManager.getInstance(context)
                     .getWorkInfosByTag(AppConfig.SUBSCRIPTION_UPDATE_TASK_NAME)
-                    .get(5, TimeUnit.SECONDS).count { work -> !work.state.isFinished } >= 2
+                    .get(5, TimeUnit.SECONDS).count { work -> !work.state.isFinished } >= CommunitySubscriptions.sources.size
             }
         }
         val removed = CommunitySubscriptions.sources.first().id

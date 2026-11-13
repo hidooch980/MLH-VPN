@@ -5,8 +5,9 @@ import com.v2ray.ang.dto.entities.SubscriptionItem
 
 /** Owns only the one-time public-source catalog; MMKV and scheduling retain their existing owners. */
 internal object CommunitySubscriptions {
-    const val INSTALLED_KEY = "mlh_community_sources_installed_v1"
-    data class Source(val id: String, val name: String, val url: String)
+    const val LEGACY_INSTALLED_KEY = "mlh_community_sources_installed_v1"
+    const val INSTALLED_KEY = "mlh_community_sources_installed_v2"
+    data class Source(val id: String, val name: String, val url: String, val catalogVersion: Int = 1)
 
     val sources = listOf(
         Source(
@@ -18,11 +19,24 @@ internal object CommunitySubscriptions {
             "mlh-community-radikal",
             "Radikal · Community",
             "https://raw.githubusercontent.com/0xRadikal/Free-v2ray-Configs/main/verified/configs_base64.txt"
+        ),
+        Source(
+            "mlh-community-iran",
+            "Iran · Morpheusadam",
+            "https://raw.githubusercontent.com/morpheusadam/v2ray-config/main/subs/bundles/iran.txt",
+            catalogVersion = 2
+        ),
+        Source(
+            "mlh-community-eternity",
+            "Eternity · Community",
+            "https://raw.githubusercontent.com/mahdibland/V2RayAggregator/master/Eternity.txt",
+            catalogVersion = 2
         )
     )
 
     interface Store {
         fun isInstalled(): Boolean
+        fun isLegacyInstalled(): Boolean = false
         fun current(): Map<String, SubscriptionItem>
         fun put(id: String, item: SubscriptionItem)
         fun remove(id: String)
@@ -33,10 +47,13 @@ internal object CommunitySubscriptions {
     @Synchronized
     fun installOnce(store: Store): Boolean {
         if (store.isInstalled()) return false
+        val legacyInstalled = store.isLegacyInstalled()
         val existing = store.current()
         val added = mutableListOf<String>()
         try {
             sources.forEach { source ->
+                // A missing v1 source may have been deliberately deleted. Never resurrect it.
+                if (legacyInstalled && source.catalogVersion == 1) return@forEach
                 if (source.id !in existing && existing.values.none { it.url == source.url }) {
                     // Record first so even a partially completed storage write is rolled back.
                     added += source.id
