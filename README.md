@@ -15,7 +15,12 @@ Molla VPN is an independent, cross-platform VPN product for personal and commerc
 
 ## Repository structure
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/ROADMAP.md](docs/ROADMAP.md).
+- `apps/client/`: Flutter client shell (no real tunnel adapter yet)
+- `backend/`: FastAPI control-plane scaffold
+- `docs/`: architecture, protocol evaluation, API contract, roadmap and decisions
+- `.github/workflows/`: backend and client CI
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/API_CONTRACT.md](docs/API_CONTRACT.md), and [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Security
 
