@@ -37,7 +37,7 @@ class CheckUpdateViewModel(application: Application) : BaseViewModel(application
                 val result = withContext(Dispatchers.IO) {
                     val now = System.currentTimeMillis()
                     val last = MmkvManager.decodeSettingsLong("mlh_update_last_attempt", 0L)
-                    if (last > 0L && now >= last && now - last < 86_400_000L) return@withContext null
+                    if (!com.v2ray.ang.handler.ReleaseAssetSelector.shouldCheck(now, last)) return@withContext null
                     MmkvManager.encodeSettings("mlh_update_last_attempt", now)
                     UpdateCheckerManager.checkForUpdate(false)
                 }

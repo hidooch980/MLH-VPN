@@ -15,4 +15,5 @@
     <string name="mlh_connect">Connect</string>
     <string name="mlh_disconnect">Disconnect</string>
     <string name="mlh_unavailable">—</string>
+    <string name="mlh_connecting">Connecting…</string>
 </resources>

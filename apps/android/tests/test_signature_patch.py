@@ -26,6 +26,14 @@ class SignaturePatchTests(unittest.TestCase):
     def test_round_trip_matches_exact_bytes(self):
         self.assertEqual(m.reconstruct(self.unsigned, self.patch), self.signed)
 
+    def test_zero_padding_before_signing_block(self):
+        end, offset = m.directory(self.unsigned)
+        block = b'\x00' * 920 + struct.pack('<Q', 24) * 2 + b'APK Sig Block 42'
+        signed = bytearray(self.unsigned[:offset] + block + self.unsigned[offset:])
+        struct.pack_into('<I', signed, end + len(block) + 16, offset + len(block))
+        patch = m.extract(self.unsigned, bytes(signed))
+        self.assertEqual(m.reconstruct(self.unsigned, patch), signed)
+
     def test_wrong_input_and_tampered_output_are_rejected(self):
         with self.assertRaises(ValueError):
             m.reconstruct(self.unsigned + b'tampered', self.patch)

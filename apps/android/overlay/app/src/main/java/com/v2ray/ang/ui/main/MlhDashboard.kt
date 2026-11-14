@@ -30,6 +30,7 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
     }
     val state by mainViewModel.uiState.collectAsStateWithLifecycle()
     val now by mainViewModel.clock.collectAsStateWithLifecycle()
+    val connecting = !state.isRunning && now < state.connectingUntil
     val unknown = stringResource(R.string.mlh_unknown)
     val unavailable = stringResource(R.string.mlh_unavailable)
     val result = (state.status as? MainStatus.ConnectionTest)?.result?.takeIf { state.isRunning && it.delayMillis >= 0 }
@@ -52,9 +53,9 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
                 Brush.linearGradient(listOf(Color(0xFF083D58), Color(0xFF116D79))), RoundedCornerShape(28.dp))
                 .padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text(stringResource(if (state.isRunning) R.string.mlh_connected else R.string.mlh_disconnected),
+                Text(stringResource(if (connecting) R.string.mlh_connecting else if (state.isRunning) R.string.mlh_connected else R.string.mlh_disconnected),
                     color = Color.White, style = MaterialTheme.typography.titleLarge)
-                Button(onClick = { onAction(MainAction.ToggleService) }, shape = CircleShape,
+                Button(onClick = { onAction(MainAction.ToggleService) }, enabled = !connecting, shape = CircleShape,
                     modifier = Modifier.size(132.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF63F5CD), contentColor = Color(0xFF083D58))) {
                     Text(stringResource(if (state.isRunning) R.string.mlh_disconnect else R.string.mlh_connect))

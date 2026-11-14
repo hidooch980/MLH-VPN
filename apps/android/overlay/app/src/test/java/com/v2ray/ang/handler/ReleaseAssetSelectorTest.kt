@@ -11,6 +11,13 @@ class ReleaseAssetSelectorTest {
     }
     private fun release(vararg assets: GitHubRelease.Asset) = GitHubRelease("v0.5.0", "", assets.toList())
 
+    @Test fun `daily checks handle first launch recent attempts and clock rollback`() {
+        assertTrue(ReleaseAssetSelector.shouldCheck(1000, 0))
+        assertFalse(ReleaseAssetSelector.shouldCheck(2000, 1000))
+        assertTrue(ReleaseAssetSelector.shouldCheck(86_401_000, 1000))
+        assertTrue(ReleaseAssetSelector.shouldCheck(1000, 2000))
+    }
+
     @Test fun `arm devices prefer the matching small package`() {
         val arm = asset("arm64-v8a")
         assertEquals(arm.browserDownloadUrl, ReleaseAssetSelector.select(release(asset("universal"), arm), listOf("arm64-v8a", "armeabi-v7a")))

@@ -4,6 +4,8 @@ import com.v2ray.ang.dto.GitHubRelease
 
 /** APK selection is separate from networking so device fallbacks can be tested. */
 internal object ReleaseAssetSelector {
+    fun shouldCheck(now: Long, last: Long): Boolean = last <= 0 || now < last || now - last >= 86_400_000L
+
     fun select(release: GitHubRelease, abis: List<String>): String? {
         val version = release.tagName.removePrefix("v")
         if (!Regex("[0-9]+\\.[0-9]+\\.[0-9]+").matches(version)) return null

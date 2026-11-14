@@ -289,6 +289,7 @@ class MainViewModel(
     // ---------- Action handler ----------
     fun onAction(action: MainAction) {
         when (action) {
+            MainAction.ConnectionRequested -> _uiState.update { it.copy(connectingUntil = android.os.SystemClock.elapsedRealtime() + 30_000) }
             MainAction.Initialize -> initialize()
             MainAction.RefreshGroups -> setupGroupTab(forceRefresh = true)
             MainAction.TestAllServers -> testAllRealPing(true)
@@ -947,6 +948,7 @@ class MainViewModel(
         if (!running || clearTestingText) testRequests.invalidateCurrent()
         _uiState.update { state ->
             state.copy(
+                connectingUntil = 0,
                 telemetry = if (running) state.telemetry else null,
                 isRunning = running,
                 isTesting = testRequests.isTesting,

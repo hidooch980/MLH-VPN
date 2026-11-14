@@ -17,6 +17,7 @@ sealed interface MainStatus {
  * Main UI state
  */
 data class MainUiState(
+    val connectingUntil: Long = 0,
     val telemetry: com.v2ray.ang.dto.SessionTelemetry? = null,
     val groups: List<GroupMapItem> = emptyList(),
     val selectedGroupId: String = "",
@@ -34,6 +35,7 @@ data class MainUiState(
  * All possible user interaction intents
  */
 sealed interface MainAction {
+    data object ConnectionRequested : MainAction
     data object Initialize : MainAction
     data object RefreshGroups : MainAction
     data object ToggleService : MainAction

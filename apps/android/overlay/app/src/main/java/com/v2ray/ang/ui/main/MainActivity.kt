@@ -202,6 +202,7 @@ class MainActivity : HelperBaseComponentActivity() {
         ) {
             checkAndRequestPermission(PermissionType.ACCESS_LOCAL_NETWORK) {}
         }
+        mainViewModel.onAction(MainAction.ConnectionRequested)
         LauncherManager.startService(this)
     }
 

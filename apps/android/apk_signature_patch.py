@@ -40,7 +40,12 @@ def reconstruct(unsigned, patch):
     block = base64.b64decode(patch['signing_block'], validate=True)
     if len(block) < 32 or block[-16:] != b'APK Sig Block 42':
         raise ValueError('Invalid APK signing block')
-    if struct.unpack_from('<Q', block)[0] != len(block) - 8 or struct.unpack_from('<Q', block, len(block) - 24)[0] != len(block) - 8:
+    size = struct.unpack_from('<Q', block, len(block) - 24)[0] + 8
+    padding = len(block) - size
+    # apksigner may insert zero padding before its 4 KiB aligned signing block.
+    if size < 32 or not 0 <= padding < 4096 or any(block[:padding]):
+        raise ValueError('Invalid signing block padding')
+    if struct.unpack_from('<Q', block, padding)[0] != size - 8:
         raise ValueError('Invalid signing block size')
     result = bytearray(unsigned[:offset] + block + unsigned[offset:])
     struct.pack_into('<I', result, end + len(block) + 16, offset + len(block))

@@ -15,4 +15,5 @@
     <string name="mlh_connect">اتصال</string>
     <string name="mlh_disconnect">قطع اتصال</string>
     <string name="mlh_unavailable">—</string>
+    <string name="mlh_connecting">در حال اتصال…</string>
 </resources>
