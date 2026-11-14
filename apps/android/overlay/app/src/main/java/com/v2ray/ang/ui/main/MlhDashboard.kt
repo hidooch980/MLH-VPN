@@ -17,6 +17,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.v2ray.ang.R
+import com.v2ray.ang.core.ProbeEvidence
+import com.v2ray.ang.core.QualityGrade
+import com.v2ray.ang.core.SmartQualityEngine
 import java.util.Locale
 
 @Composable
@@ -28,6 +31,7 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
     val unknown = stringResource(R.string.mlh_unknown)
     val unavailable = stringResource(R.string.mlh_unavailable)
     val result = (state.status as? MainStatus.ConnectionTest)?.result?.takeIf { state.isRunning && it.delayMillis >= 0 }
+    val quality = result?.let { SmartQualityEngine.assess(ProbeEvidence("active", 1, listOf(it.delayMillis), verifiedCountryCode = it.country)) }
     val traffic = state.telemetry?.takeIf { state.isRunning }
     val fresh = traffic != null && now - traffic.sampledAt in 0..10_000
     val country = result?.country?.takeIf { it.isNotBlank() }?.let {
@@ -67,12 +71,10 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
             }
             Text(stringResource(R.string.mlh_engine_hint), style = MaterialTheme.typography.labelLarge)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf("AUTO" to R.string.mlh_engine_auto, "WARP" to R.string.mlh_engine_warp,
-                    "PSIPHON" to R.string.mlh_engine_psiphon, "TOR" to R.string.mlh_engine_tor).forEach { (id, label) ->
+                listOf("AUTO" to R.string.mlh_engine_auto, "WARP" to R.string.mlh_engine_warp).forEach { (id, label) ->
                     FilterChip(
                         selected = selectedEngine == id,
                         onClick = { selectedEngine = id },
-                        enabled = id == "AUTO" || id == "WARP",
                         label = { Text(stringResource(label)) },
                         modifier = Modifier.weight(1f),
                     )
@@ -93,6 +95,7 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
                     }
                     Text(country, style = MaterialTheme.typography.titleLarge)
                     Text(result?.ipAddress?.takeIf { it.isNotBlank() } ?: unknown)
+                    Text(stringResource(R.string.mlh_quality) + ": " + stringResource(qualityResource(quality?.grade)))
                     TextButton(enabled = state.isRunning && !state.isTesting,
                         onClick = { onAction(MainAction.TestCurrentServer) }) { Text(stringResource(R.string.mlh_probe)) }
                 }
@@ -108,6 +111,14 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
             }
         }
     }
+}
+
+private fun qualityResource(grade: QualityGrade?): Int = when (grade) {
+    QualityGrade.EXCELLENT -> R.string.mlh_quality_excellent
+    QualityGrade.GOOD -> R.string.mlh_quality_good
+    QualityGrade.FAIR -> R.string.mlh_quality_fair
+    QualityGrade.POOR -> R.string.mlh_quality_poor
+    QualityGrade.UNAVAILABLE, null -> R.string.mlh_unavailable
 }
 
 @Composable

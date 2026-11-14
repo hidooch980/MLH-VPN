@@ -18,9 +18,12 @@
     <string name="mlh_engine_hint">Choose the connection engine</string>
     <string name="mlh_engine_auto">Smart</string>
     <string name="mlh_engine_warp">WARP</string>
-    <string name="mlh_engine_psiphon">Psiphon</string>
-    <string name="mlh_engine_tor">Tor</string>
     <string name="mlh_smart_test">Smart test and choose best</string>
     <string name="mlh_smart_testing">Testing services…</string>
     <string name="mlh_country_auto">Automatic country</string>
+    <string name="mlh_quality">Quality</string>
+    <string name="mlh_quality_excellent">Excellent</string>
+    <string name="mlh_quality_good">Good</string>
+    <string name="mlh_quality_fair">Fair</string>
+    <string name="mlh_quality_poor">Poor</string>
 </resources>
