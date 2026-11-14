@@ -26,4 +26,6 @@
     <string name="mlh_quality_good">خوب</string>
     <string name="mlh_quality_fair">متوسط</string>
     <string name="mlh_quality_poor">ضعیف</string>
+    <string name="mlh_favorite_add">افزودن به علاقه‌مندی</string>
+    <string name="mlh_favorite_remove">علاقه‌مندی</string>
 </resources>

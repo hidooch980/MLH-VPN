@@ -91,8 +91,12 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(stringResource(R.string.mlh_exit), style = MaterialTheme.typography.labelLarge)
-                        Text(stringResource(R.string.mlh_country_auto), color = Color(0xFF20BFD2))
+                        TextButton(
+                            onClick = { onAction(MainAction.ToggleFavorite) },
+                            enabled = state.selectedGuid != null,
+                        ) { Text(stringResource(if (state.isFavorite) R.string.mlh_favorite_remove else R.string.mlh_favorite_add)) }
                     }
+                    Text(stringResource(R.string.mlh_country_auto), color = Color(0xFF20BFD2))
                     Text(country, style = MaterialTheme.typography.titleLarge)
                     Text(result?.ipAddress?.takeIf { it.isNotBlank() } ?: unknown)
                     Text(stringResource(R.string.mlh_quality) + ": " + stringResource(qualityResource(quality?.grade)))

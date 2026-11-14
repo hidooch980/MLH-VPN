@@ -26,4 +26,6 @@
     <string name="mlh_quality_good">Good</string>
     <string name="mlh_quality_fair">Fair</string>
     <string name="mlh_quality_poor">Poor</string>
+    <string name="mlh_favorite_add">Add favorite</string>
+    <string name="mlh_favorite_remove">Favorite</string>
 </resources>
