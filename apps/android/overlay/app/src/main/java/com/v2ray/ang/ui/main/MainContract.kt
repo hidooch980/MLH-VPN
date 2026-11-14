@@ -29,7 +29,8 @@ data class MainUiState(
     val confirmRemove: Boolean = false,
     val doubleColumnDisplay: Boolean = false,
     val shareQRCodeBitmap: android.graphics.Bitmap? = null,
-    val isFavorite: Boolean = false
+    val isFavorite: Boolean = false,
+    val selectionReason: String? = null
 )
 
 /**

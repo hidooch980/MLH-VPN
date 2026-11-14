@@ -86,6 +86,9 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D7890)),
             ) { Text(stringResource(if (state.isTesting) R.string.mlh_smart_testing else R.string.mlh_smart_test)) }
+            state.selectionReason?.let { reason ->
+                Text(stringResource(selectionReasonResource(reason)), style = MaterialTheme.typography.bodySmall)
+            }
             Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF132448), contentColor = Color.White)) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -123,6 +126,14 @@ private fun qualityResource(grade: QualityGrade?): Int = when (grade) {
     QualityGrade.FAIR -> R.string.mlh_quality_fair
     QualityGrade.POOR -> R.string.mlh_quality_poor
     QualityGrade.UNAVAILABLE, null -> R.string.mlh_unavailable
+}
+
+private fun selectionReasonResource(reason: String): Int = when (reason) {
+    "no_current_server" -> R.string.mlh_reason_first_choice
+    "current_unhealthy" -> R.string.mlh_reason_unhealthy
+    "material_quality_gain" -> R.string.mlh_reason_better
+    "keep_stable_connection" -> R.string.mlh_reason_stable
+    else -> R.string.mlh_reason_unavailable
 }
 
 @Composable

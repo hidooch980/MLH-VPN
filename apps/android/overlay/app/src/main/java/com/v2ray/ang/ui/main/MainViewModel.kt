@@ -937,6 +937,23 @@ class MainViewModel(
 
     private fun onTestsFinished(requestId: String) {
         if (testRequests.completeBulk(requestId) == null) return
+        val assessments = currentServers().map { server ->
+            SmartQualityEngine.assess(ProbeEvidence(
+                serverId = server.guid,
+                attempted = 1,
+                latencyMillis = listOf(server.testDelayMillis).filter { it > 0 },
+            ))
+        }
+        val decision = SmartQualityEngine.selectBest(assessments, uiState.value.selectedGuid)
+        if (!uiState.value.isRunning && decision.shouldSwitch) {
+            decision.selected?.let { selected ->
+                updateSelectedGuid(selected.serverId)
+                SmartSelectionStore.recordSuccessfulConnection(
+                    selected.serverId, selected.verifiedCountryCode, selected.score,
+                )
+            }
+        }
+        _uiState.update { it.copy(selectionReason = decision.reason) }
         resetTestStatus()
         viewModelScope.launch(ioDispatcher) {
             cacheMutex.withLock { groupDataCache.clear() }

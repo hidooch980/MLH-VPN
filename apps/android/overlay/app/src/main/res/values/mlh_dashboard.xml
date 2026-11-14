@@ -28,4 +28,9 @@
     <string name="mlh_quality_poor">Poor</string>
     <string name="mlh_favorite_add">Add favorite</string>
     <string name="mlh_favorite_remove">Favorite</string>
+    <string name="mlh_reason_first_choice">Best available service selected</string>
+    <string name="mlh_reason_unhealthy">Changed because the previous service was unhealthy</string>
+    <string name="mlh_reason_better">Changed because measured quality was materially better</string>
+    <string name="mlh_reason_stable">Kept the current service to avoid an unnecessary interruption</string>
+    <string name="mlh_reason_unavailable">No reachable service was found</string>
 </resources>

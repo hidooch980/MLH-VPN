@@ -28,4 +28,9 @@
     <string name="mlh_quality_poor">ضعیف</string>
     <string name="mlh_favorite_add">افزودن به علاقه‌مندی</string>
     <string name="mlh_favorite_remove">علاقه‌مندی</string>
+    <string name="mlh_reason_first_choice">بهترین سرویس در دسترس انتخاب شد</string>
+    <string name="mlh_reason_unhealthy">به‌دلیل ناپایداری سرویس قبلی تغییر کرد</string>
+    <string name="mlh_reason_better">به‌دلیل برتری محسوس کیفیت اندازه‌گیری‌شده تغییر کرد</string>
+    <string name="mlh_reason_stable">برای جلوگیری از قطع غیرضروری، سرویس فعلی حفظ شد</string>
+    <string name="mlh_reason_unavailable">هیچ سرویس قابل‌دسترسی پیدا نشد</string>
 </resources>
