@@ -1,6 +1,5 @@
 package com.v2ray.ang.ui.main
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -22,12 +21,7 @@ import java.util.Locale
 
 @Composable
 fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onNavigate: (MainDestination) -> Unit) {
-    var profiles by rememberSaveable { mutableStateOf(false) }
-    if (profiles) {
-        BackHandler { profiles = false }
-        MainProfilesScreen(mainViewModel, onAction, onNavigate)
-        return
-    }
+    var selectedEngine by rememberSaveable { mutableStateOf("AUTO") }
     val state by mainViewModel.uiState.collectAsStateWithLifecycle()
     val now by mainViewModel.clock.collectAsStateWithLifecycle()
     val connecting = !state.isRunning && now < state.connectingUntil
@@ -39,7 +33,7 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
     val country = result?.country?.takeIf { it.isNotBlank() }?.let {
         if (Regex("[A-Za-z]{2}").matches(it)) Locale.Builder().setRegion(it.uppercase(Locale.ROOT)).build().displayCountry else it
     } ?: unknown
-    Scaffold { padding ->
+    Scaffold(containerColor = Color(0xFF06152E), contentColor = Color(0xFFF4F8FF)) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)
             .verticalScroll(rememberScrollState()).padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -47,26 +41,56 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineSmall)
-                TextButton(onClick = { profiles = true }) { Text(stringResource(R.string.mlh_profiles)) }
+                AssistChip(
+                    onClick = {},
+                    label = { Text(stringResource(if (state.isRunning) R.string.mlh_connected else R.string.mlh_disconnected)) },
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = if (state.isRunning) Color(0xFF0E6B63) else Color(0xFF14284F),
+                        labelColor = Color.White,
+                    ),
+                )
             }
             Column(Modifier.fillMaxWidth().background(
-                Brush.linearGradient(listOf(Color(0xFF083D58), Color(0xFF116D79))), RoundedCornerShape(28.dp))
+                Brush.linearGradient(listOf(Color(0xFF12395E), Color(0xFF116D79))), RoundedCornerShape(28.dp))
                 .padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(stringResource(if (connecting) R.string.mlh_connecting else if (state.isRunning) R.string.mlh_connected else R.string.mlh_disconnected),
                     color = Color.White, style = MaterialTheme.typography.titleLarge)
                 Button(onClick = { onAction(MainAction.ToggleService) }, enabled = !connecting, shape = CircleShape,
                     modifier = Modifier.size(132.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF63F5CD), contentColor = Color(0xFF083D58))) {
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF38C4FF), contentColor = Color(0xFF041A31))) {
                     Text(stringResource(if (state.isRunning) R.string.mlh_disconnect else R.string.mlh_connect))
                 }
                 Text(stringResource(R.string.mlh_timer), color = Color.White.copy(alpha = 0.8f))
                 Text(traffic?.let { formatSessionTime((now - it.startedAt).coerceAtLeast(0)) } ?: unavailable,
                     color = Color.White, style = MaterialTheme.typography.headlineMedium)
             }
-            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+            Text(stringResource(R.string.mlh_engine_hint), style = MaterialTheme.typography.labelLarge)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                listOf("AUTO" to R.string.mlh_engine_auto, "WARP" to R.string.mlh_engine_warp,
+                    "PSIPHON" to R.string.mlh_engine_psiphon, "TOR" to R.string.mlh_engine_tor).forEach { (id, label) ->
+                    FilterChip(
+                        selected = selectedEngine == id,
+                        onClick = { selectedEngine = id },
+                        enabled = id == "AUTO" || id == "WARP",
+                        label = { Text(stringResource(label)) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+            Button(
+                onClick = { onAction(MainAction.TestRealAllServers) },
+                enabled = !state.isTesting && !state.isRunning,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D7890)),
+            ) { Text(stringResource(if (state.isTesting) R.string.mlh_smart_testing else R.string.mlh_smart_test)) }
+            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF132448), contentColor = Color.White)) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.mlh_exit), style = MaterialTheme.typography.labelLarge)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(stringResource(R.string.mlh_exit), style = MaterialTheme.typography.labelLarge)
+                        Text(stringResource(R.string.mlh_country_auto), color = Color(0xFF20BFD2))
+                    }
                     Text(country, style = MaterialTheme.typography.titleLarge)
                     Text(result?.ipAddress?.takeIf { it.isNotBlank() } ?: unknown)
                     TextButton(enabled = state.isRunning && !state.isTesting,
@@ -88,7 +112,8 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
 
 @Composable
 private fun Metric(label: String, value: String, modifier: Modifier) {
-    Card(modifier, shape = RoundedCornerShape(20.dp)) {
+    Card(modifier, shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF132448), contentColor = Color.White)) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(label, style = MaterialTheme.typography.labelMedium)
             Text(value, style = MaterialTheme.typography.titleMedium)

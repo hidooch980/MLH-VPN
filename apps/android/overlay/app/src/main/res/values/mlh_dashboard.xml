@@ -10,10 +10,17 @@
     <string name="mlh_receive">Receive</string>
     <string name="mlh_sent_total">Total sent</string>
     <string name="mlh_received_total">Total received</string>
-    <string name="mlh_profiles">Configurations</string>
     <string name="mlh_probe">Check exit and ping</string>
     <string name="mlh_connect">Connect</string>
     <string name="mlh_disconnect">Disconnect</string>
     <string name="mlh_unavailable">—</string>
     <string name="mlh_connecting">Connecting…</string>
+    <string name="mlh_engine_hint">Choose the connection engine</string>
+    <string name="mlh_engine_auto">Smart</string>
+    <string name="mlh_engine_warp">WARP</string>
+    <string name="mlh_engine_psiphon">Psiphon</string>
+    <string name="mlh_engine_tor">Tor</string>
+    <string name="mlh_smart_test">Smart test and choose best</string>
+    <string name="mlh_smart_testing">Testing services…</string>
+    <string name="mlh_country_auto">Automatic country</string>
 </resources>

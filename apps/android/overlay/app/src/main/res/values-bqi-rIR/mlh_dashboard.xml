@@ -10,7 +10,6 @@
     <string name="mlh_receive">دریافت</string>
     <string name="mlh_sent_total">کل ارسال</string>
     <string name="mlh_received_total">کل دریافت</string>
-    <string name="mlh_profiles">کانفیگ‌ها</string>
     <string name="mlh_probe">بررسی خروجی و پینگ</string>
     <string name="mlh_connect">اتصال</string>
     <string name="mlh_disconnect">قطع اتصال</string>
