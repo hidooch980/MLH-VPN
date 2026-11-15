@@ -2,12 +2,12 @@ name: Verify and publish signed Android
 on:
   push:
     branches: ['main']
-    paths: ['release-signatures/0.6.0-beta.1/**', '.github/workflows/android-publish.yml']
+    paths: ['release-signatures/0.6.0-beta.2/**', '.github/workflows/android-publish.yml']
 permissions:
   contents: read
   actions: read
 concurrency:
-  group: mlh-publish-0.6.0-beta.1
+  group: mlh-publish-0.6.0-beta.2
   cancel-in-progress: false
 jobs:
   verify:
@@ -23,12 +23,12 @@ jobs:
         run: |
           python3 - <<'PY'
           import json, re, os, subprocess
-          m = json.load(open('release-signatures/0.6.0-beta.1/manifest.json'))
+          m = json.load(open('release-signatures/0.6.0-beta.2/manifest.json'))
           assert isinstance(m['run_id'], int) and m['run_id'] > 0
           assert re.fullmatch('[a-f0-9]{40}', m['source_sha'])
           run = json.loads(subprocess.check_output(['gh', 'api', f'repos/{os.environ["GITHUB_REPOSITORY"]}/actions/runs/{m["run_id"]}']))
           assert run['head_sha'] == m['source_sha'] and run['conclusion'] == 'success'
-          assert run['name'] == 'Android release candidate' and run['head_branch'] == 'codex/engine-redesign'
+          assert run['name'] == 'Android release candidate' and run['head_branch'] == 'codex/publish-dashboard-beta2'
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
               out.write(f'run={m["run_id"]}\nsource={m["source_sha"]}\n')
           PY
@@ -61,7 +61,7 @@ jobs:
             name=$(basename "$apk")
             target="dist/$name"
             if [ "$name" = MLHVPN-androidTest.apk ]; then target="test-apk/$name"; fi
-            python3 apps/android/apk_signature_patch.py apply "$apk" "release-signatures/0.6.0-beta.1/$name.json" "$target"
+            python3 apps/android/apk_signature_patch.py apply "$apk" "release-signatures/0.6.0-beta.2/$name.json" "$target"
             "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --verbose --print-certs "$target" > "$RUNNER_TEMP/signature.txt"
             grep -F 'certificate SHA-256 digest: 3c8849fc59084133e7b09402ee1665563f5329ce3602380a7e05faee8d4e7d7d' "$RUNNER_TEMP/signature.txt"
             "$ANDROID_HOME/build-tools/37.0.0/zipalign" -c -P 16 4 "$target"
@@ -98,8 +98,8 @@ jobs:
           path: release
       - name: Download previous signed release and enable KVM
         run: |
-          curl -fL --retry 3 https://github.com/hidooch980/MLH-VPN/releases/download/v0.5.1/MLHVPN_0.5.1-fdroid_universal.apk -o previous.apk
-          echo '27711e523ef0c0d70bc1255f328c5499dd8ac08aedab3d24a7e492cd9cbfae84  previous.apk' | sha256sum -c
+          curl -fL --retry 3 https://github.com/hidooch980/MLH-VPN/releases/download/v0.6.0-beta.1/MLHVPN_0.6.0-beta.1-fdroid_universal.apk -o previous.apk
+          echo '73c29abf0fd4d2155741ca1fb77479a20e0370b15c2f4a99eda209de93914fc2  previous.apk' | sha256sum -c
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
@@ -111,12 +111,12 @@ jobs:
           disable-animations: true
           script: |
             adb install previous.apk
-            adb install -r release/MLHVPN_0.6.0-beta.1-fdroid_universal.apk
+            adb install -r release/MLHVPN_0.6.0-beta.2-fdroid_universal.apk
             adb shell pm grant io.github.hidooch980.mlhvpn.fdroid android.permission.POST_NOTIFICATIONS
             adb shell svc wifi disable
             adb shell svc data disable
             adb shell dumpsys package io.github.hidooch980.mlhvpn.fdroid | tee package.txt
-            grep -F 'versionName=0.6.0-beta.1' package.txt
+            grep -F 'versionName=0.6.0-beta.2' package.txt
             adb shell am start -W -n io.github.hidooch980.mlhvpn.fdroid/com.v2ray.ang.ui.main.MainActivity | tee launch.txt
             grep -F 'Status: ok' launch.txt
             sleep 3
@@ -147,4 +147,4 @@ jobs:
         run: |
           cd release
           sha256sum -c SHA256SUMS
-          gh release create v0.6.0-beta.1 --prerelease --repo "$GITHUB_REPOSITORY" --target "$SOURCE_SHA" --title 'MLH VPN 0.6.0 beta 1' --notes-file RELEASE-NOTES.fa.md ./*.apk ./MLHVPN-signing-cert.pem ./MLHVPN-android-source.tar.gz ./SHA256SUMS ./INSTALL.fa.md
+          gh release create v0.6.0-beta.2 --prerelease --repo "$GITHUB_REPOSITORY" --target "$SOURCE_SHA" --title 'MLH VPN 0.6.0 beta 2' --notes-file RELEASE-NOTES.fa.md ./*.apk ./MLHVPN-signing-cert.pem ./MLHVPN-android-source.tar.gz ./SHA256SUMS ./INSTALL.fa.md

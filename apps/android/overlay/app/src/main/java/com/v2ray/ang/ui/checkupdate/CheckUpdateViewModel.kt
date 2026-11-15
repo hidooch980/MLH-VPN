@@ -2,6 +2,7 @@ package com.v2ray.ang.ui.checkupdate
 
 import android.app.Application
 import com.v2ray.ang.AppConfig
+import com.v2ray.ang.BuildConfig
 import com.v2ray.ang.R
 import com.v2ray.ang.dto.CheckUpdateResult
 import com.v2ray.ang.handler.MmkvManager
@@ -39,7 +40,10 @@ class CheckUpdateViewModel(application: Application) : BaseViewModel(application
                     val last = MmkvManager.decodeSettingsLong("mlh_update_last_attempt", 0L)
                     if (!com.v2ray.ang.handler.ReleaseAssetSelector.shouldCheck(now, last)) return@withContext null
                     MmkvManager.encodeSettings("mlh_update_last_attempt", now)
-                    UpdateCheckerManager.checkForUpdate(false)
+                    // A beta/rc build must see its next prerelease automatically; stable builds
+                    // continue to use GitHub's stable-only endpoint unless the user opted in.
+                    val includePreRelease = BuildConfig.VERSION_NAME.contains('-') || _checkPreRelease.value
+                    UpdateCheckerManager.checkForUpdate(includePreRelease)
                 }
                 if (result?.hasUpdate == true) {
                     _updateResult.value = result
