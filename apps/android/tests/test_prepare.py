@@ -60,6 +60,7 @@ class OverlayTests(unittest.TestCase):
         self.assertNotIn('MainProfilesScreen(', dashboard)
         self.assertNotIn('mlh_profiles', dashboard)
         self.assertNotIn('V2Ray', dashboard)
+        self.assertNotIn('mlh_engine_warp', dashboard)
         self.assertNotIn('وی تو ری', persian)
         self.assertIn('mlh_smart_test', dashboard)
 

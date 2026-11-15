@@ -17,7 +17,6 @@
     <string name="mlh_connecting">Connecting…</string>
     <string name="mlh_engine_hint">Choose the connection engine</string>
     <string name="mlh_engine_auto">Smart</string>
-    <string name="mlh_engine_warp">WARP</string>
     <string name="mlh_smart_test">Smart test and choose best</string>
     <string name="mlh_smart_testing">Testing services…</string>
     <string name="mlh_country_auto">Automatic country</string>

@@ -8,7 +8,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -24,7 +23,6 @@ import java.util.Locale
 
 @Composable
 fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onNavigate: (MainDestination) -> Unit) {
-    var selectedEngine by rememberSaveable { mutableStateOf("AUTO") }
     val state by mainViewModel.uiState.collectAsStateWithLifecycle()
     val now by mainViewModel.clock.collectAsStateWithLifecycle()
     val connecting = !state.isRunning && now < state.connectingUntil
@@ -70,16 +68,7 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
                     color = Color.White, style = MaterialTheme.typography.headlineMedium)
             }
             Text(stringResource(R.string.mlh_engine_hint), style = MaterialTheme.typography.labelLarge)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf("AUTO" to R.string.mlh_engine_auto, "WARP" to R.string.mlh_engine_warp).forEach { (id, label) ->
-                    FilterChip(
-                        selected = selectedEngine == id,
-                        onClick = { selectedEngine = id },
-                        label = { Text(stringResource(label)) },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
+            AssistChip(onClick = {}, label = { Text(stringResource(R.string.mlh_engine_auto)) })
             Button(
                 onClick = { onAction(MainAction.TestRealAllServers) },
                 enabled = !state.isTesting && !state.isRunning,

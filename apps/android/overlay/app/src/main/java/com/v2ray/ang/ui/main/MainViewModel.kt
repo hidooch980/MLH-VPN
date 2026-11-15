@@ -173,9 +173,11 @@ class MainViewModel(
                         latencyMillis = listOf(event.result.delayMillis),
                         verifiedCountryCode = event.result.country,
                     ))
-                    SmartSelectionStore.recordSuccessfulConnection(
-                        guid, assessment.verifiedCountryCode, assessment.score,
-                    )
+                    if (assessment.reachable) {
+                        SmartSelectionStore.recordSuccessfulConnection(
+                            guid, assessment.verifiedCountryCode, assessment.score,
+                        )
+                    }
                 }
                 _uiState.update { it.copy(isTesting = testRequests.isTesting, status = MainStatus.ConnectionTest(event.result)) }
             }
