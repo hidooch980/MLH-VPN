@@ -3,6 +3,7 @@
     <string name="mlh_connected">متصل</string>
     <string name="mlh_disconnected">قطع</string>
     <string name="mlh_exit">مکان خروجی</string>
+    <string name="mlh_exit_ip">IP خروجی</string>
     <string name="mlh_unknown">نامشخص</string>
     <string name="mlh_timer">زمان اتصال</string>
     <string name="mlh_ping">پینگ</string>
@@ -17,6 +18,8 @@
     <string name="mlh_connecting">در حال اتصال…</string>
     <string name="mlh_engine_hint">موتور اتصال را انتخاب کنید</string>
     <string name="mlh_engine_auto">هوشمند</string>
+    <string name="mlh_connection_mode">حالت اتصال</string>
+    <string name="mlh_engine_secure">هسته امن</string>
     <string name="mlh_smart_test">تست هوشمند و انتخاب بهترین</string>
     <string name="mlh_smart_testing">در حال تست سرویس‌ها…</string>
     <string name="mlh_country_auto">کشور خودکار</string>

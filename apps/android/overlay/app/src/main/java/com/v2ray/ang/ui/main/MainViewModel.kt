@@ -87,7 +87,11 @@ class MainViewModel(
             selectedGuid = dataSource.getSelectServer(),
             isFavorite = SmartSelectionStore.isFavorite(dataSource.getSelectServer()),
             confirmRemove = dataSource.getConfirmRemove(),
-            doubleColumnDisplay = dataSource.getDoubleColumnDisplay()
+            doubleColumnDisplay = dataSource.getDoubleColumnDisplay(),
+            preferredCountry = SmartSelectionStore.preferredCountry(),
+            connectionMode = runCatching {
+                ConnectionMode.valueOf(SmartSelectionStore.connectionMode())
+            }.getOrDefault(ConnectionMode.AUTO),
         )
     )
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
@@ -323,6 +327,8 @@ class MainViewModel(
             MainAction.ExportAll -> exportAllAsync()
             is MainAction.SelectGroup -> subscriptionIdChanged(action.groupId)
             is MainAction.SelectServer -> updateSelectedGuid(action.guid)
+            is MainAction.SelectCountry -> selectCountry(action.countryCode)
+            is MainAction.SelectConnectionMode -> selectConnectionMode(action.mode)
             is MainAction.RemoveServer -> removeServerAndRefresh(action.guid)
             is MainAction.Search -> filterConfig(action.query)
             is MainAction.ImportBatchConfig -> importBatchConfig(action.configText)
@@ -352,6 +358,33 @@ class MainViewModel(
                 // Handled by Activity via its onAction lambda
             }
         }
+    }
+
+    private fun selectCountry(countryCode: String?) {
+        val normalized = countryCode?.uppercase()?.takeIf { it.matches(Regex("[A-Z]{2}")) }
+        SmartSelectionStore.setPreferredCountry(normalized)
+        _uiState.update { it.copy(preferredCountry = normalized) }
+        if (normalized == null) return
+        currentServers()
+            .filter { SmartSelectionStore.verifiedCountry(it.guid) == normalized }
+            .minByOrNull { it.testDelayMillis.takeIf { delay -> delay > 0 } ?: Long.MAX_VALUE }
+            ?.guid?.let(::updateSelectedGuid)
+    }
+
+    private fun selectConnectionMode(mode: ConnectionMode) {
+        SmartSelectionStore.setConnectionMode(mode.name)
+        _uiState.update { it.copy(connectionMode = mode) }
+        if (mode == ConnectionMode.AUTO) return
+        val compatible = currentServers().filter { server ->
+            val type = server.profile.configType.name.uppercase()
+            when (mode) {
+                ConnectionMode.WIREGUARD -> type.contains("WIREGUARD")
+                ConnectionMode.SECURE -> !type.contains("WIREGUARD")
+                ConnectionMode.AUTO -> true
+            }
+        }
+        compatible.minByOrNull { it.testDelayMillis.takeIf { delay -> delay > 0 } ?: Long.MAX_VALUE }
+            ?.guid?.let(::updateSelectedGuid)
     }
 
     // ---------- Initialization ----------

@@ -119,6 +119,14 @@ class MainActivity : HelperBaseComponentActivity() {
                     MainAction.RestartService -> LauncherManager.restartServiceOrStart(this, ::requestServiceStart)
                     MainAction.LocateSelectedServer -> mainViewModel.triggerLocateSelectedServer()
                     is MainAction.SelectServer -> setSelectServer(action.guid)
+                    is MainAction.SelectCountry, is MainAction.SelectConnectionMode -> {
+                        val previous = mainViewModel.uiState.value.selectedGuid
+                        val running = mainViewModel.uiState.value.isRunning
+                        mainViewModel.onAction(action)
+                        if (running && previous != mainViewModel.uiState.value.selectedGuid) {
+                            LauncherManager.restartService(this)
+                        }
+                    }
                     is MainAction.EditServer -> editServer(action.guid, action.profile)
                     is MainAction.ShareClipboard -> shareToClipboard(action.guid)
                     is MainAction.ShareFullContent -> shareFullContentAsync(action.guid)

@@ -8,6 +8,8 @@ object SmartSelectionStore {
     private const val LAST_SUCCESSFUL = "mlh_last_successful_server"
     private const val COUNTRY_PREFIX = "mlh_verified_country_"
     private const val SCORE_PREFIX = "mlh_quality_score_"
+    private const val PREFERRED_COUNTRY = "mlh_preferred_country"
+    private const val CONNECTION_MODE = "mlh_connection_mode"
 
     fun favorites(): Set<String> = MmkvManager.decodeSettingsStringSet(FAVORITES)?.toSet().orEmpty()
     fun isFavorite(serverId: String?): Boolean = serverId != null && serverId in favorites()
@@ -33,6 +35,16 @@ object SmartSelectionStore {
     fun verifiedCountry(serverId: String): String? = MmkvManager.decodeSettingsString(COUNTRY_PREFIX + keySuffix(serverId))
     fun qualityScore(serverId: String): Int? =
         MmkvManager.decodeSettingsInt(SCORE_PREFIX + keySuffix(serverId), -1).takeIf { it >= 0 }
+
+    fun preferredCountry(): String? = MmkvManager.decodeSettingsString(PREFERRED_COUNTRY)
+        ?.takeIf { it.matches(Regex("[A-Z]{2}")) }
+
+    fun setPreferredCountry(countryCode: String?) =
+        MmkvManager.encodeSettings(PREFERRED_COUNTRY, countryCode.orEmpty())
+
+    fun connectionMode(): String = MmkvManager.decodeSettingsString(CONNECTION_MODE, "AUTO").orEmpty()
+
+    fun setConnectionMode(mode: String) = MmkvManager.encodeSettings(CONNECTION_MODE, mode)
 
     private fun keySuffix(serverId: String): String = MessageDigest.getInstance("SHA-256")
         .digest(serverId.toByteArray(Charsets.UTF_8)).take(12)

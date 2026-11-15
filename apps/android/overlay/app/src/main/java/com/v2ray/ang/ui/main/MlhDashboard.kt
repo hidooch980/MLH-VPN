@@ -82,7 +82,7 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
                 .background(Brush.verticalGradient(listOf(Ink, Night)))) {
                 Header(snap)
                 when (tab) {
-                    DashboardTab.HOME -> PulseDashboard(snap, state, onAction)
+                    DashboardTab.HOME -> PulseDashboard(snap, state, group.rows, onAction)
                     DashboardTab.COUNTRIES -> CountryDashboard(snap, state, group.rows, onAction)
                     DashboardTab.STATUS -> ControlDashboard(snap, state, onAction)
                     DashboardTab.SETTINGS -> Unit
@@ -107,10 +107,11 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
     }
 }
 
-@Composable private fun PulseDashboard(s: Snapshot, state: MainUiState, action: (MainAction) -> Unit) = ScrollPage {
+@Composable private fun PulseDashboard(s: Snapshot, state: MainUiState, servers: List<ServerRowUiModel>, action: (MainAction) -> Unit) = ScrollPage {
     ConnectionPulse(s) { action(MainAction.ToggleService) }
     QualityPill(s.quality?.grade)
-    ExitCard(s)
+    ConnectionPreferences(state, servers, action)
+    OutputIpCard(s, state, action)
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Metric("↓", stringResource(R.string.mlh_receive), s.download, Modifier.weight(1f))
         Metric("↑", stringResource(R.string.mlh_send), s.upload, Modifier.weight(1f))
@@ -172,6 +173,48 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
         Column(horizontalAlignment = Alignment.End) { Text("تأییدشده", color = Mint, fontSize = 11.sp); Text("‹", fontSize = 28.sp) }
     }
 }
+
+@Composable private fun OutputIpCard(s: Snapshot, state: MainUiState, action: (MainAction) -> Unit) = Surface(
+    Modifier.fillMaxWidth().clickable(enabled = state.isRunning) { action(MainAction.TestCurrentServer) },
+    color = Panel, shape = RoundedCornerShape(20.dp),
+    border = androidx.compose.foundation.BorderStroke(1.dp, Cyan.copy(.22f)),
+) {
+    Row(Modifier.padding(horizontal = 16.dp, vertical = 13.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        CircleLabel("IP", Color(0xFF10495B), Mint)
+        Column(Modifier.weight(1f)) { Text(stringResource(R.string.mlh_exit_ip), color = Muted, fontSize = 11.sp); Text(s.ip, fontWeight = FontWeight.Bold, fontSize = 16.sp, maxLines = 1) }
+        Box(Modifier.size(48.dp).clip(CircleShape).background(Cyan.copy(.12f)).border(1.dp, Cyan.copy(.65f), CircleShape), contentAlignment = Alignment.Center) { Text("↻", color = Cyan, fontSize = 25.sp, fontWeight = FontWeight.Bold) }
+    }
+}
+
+@Composable private fun ConnectionPreferences(state: MainUiState, servers: List<ServerRowUiModel>, action: (MainAction) -> Unit) {
+    var countryMenu by rememberSaveable { mutableStateOf(false) }
+    var modeMenu by rememberSaveable { mutableStateOf(false) }
+    val countries = remember(servers) { servers.mapNotNull { row -> SmartSelectionStore.verifiedCountry(row.guid) }.distinct().sorted() }
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Box(Modifier.fillMaxWidth()) {
+            PreferenceButton("◎", stringResource(R.string.mlh_exit), state.preferredCountry ?: stringResource(R.string.mlh_country_auto)) { countryMenu = true }
+            DropdownMenu(countryMenu, { countryMenu = false }) {
+                DropdownMenuItem({ Text(stringResource(R.string.mlh_country_auto)) }, onClick = { countryMenu = false; action(MainAction.SelectCountry(null)) })
+                countries.forEach { code -> DropdownMenuItem({ Text(countryName(code)) }, onClick = { countryMenu = false; action(MainAction.SelectCountry(code)) }) }
+            }
+        }
+        Box(Modifier.fillMaxWidth()) {
+            val modeLabel = when (state.connectionMode) { ConnectionMode.AUTO -> stringResource(R.string.mlh_engine_auto); ConnectionMode.WIREGUARD -> "WireGuard / WARP"; ConnectionMode.SECURE -> stringResource(R.string.mlh_engine_secure) }
+            PreferenceButton("⌁", stringResource(R.string.mlh_connection_mode), modeLabel) { modeMenu = true }
+            DropdownMenu(modeMenu, { modeMenu = false }) {
+                DropdownMenuItem({ Text(stringResource(R.string.mlh_engine_auto)) }, onClick = { modeMenu = false; action(MainAction.SelectConnectionMode(ConnectionMode.AUTO)) })
+                DropdownMenuItem({ Text("WireGuard / WARP") }, onClick = { modeMenu = false; action(MainAction.SelectConnectionMode(ConnectionMode.WIREGUARD)) })
+                DropdownMenuItem({ Text(stringResource(R.string.mlh_engine_secure)) }, onClick = { modeMenu = false; action(MainAction.SelectConnectionMode(ConnectionMode.SECURE)) })
+            }
+        }
+    }
+}
+
+@Composable private fun PreferenceButton(icon: String, title: String, value: String, click: () -> Unit) = Surface(Modifier.fillMaxWidth().clickable(onClick = click), color = Panel, shape = RoundedCornerShape(18.dp), border = androidx.compose.foundation.BorderStroke(1.dp, White.copy(.08f))) {
+    Row(Modifier.padding(13.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) { Text(icon, color = Cyan, fontSize = 20.sp); Column(Modifier.weight(1f)) { Text(title, color = Muted, fontSize = 10.sp); Text(value, fontWeight = FontWeight.Bold, fontSize = 12.sp, maxLines = 1) }; Text("⌄", color = Muted) }
+}
+
+private fun countryName(code: String): String = Locale.Builder().setRegion(code).build().getDisplayCountry(Locale.getDefault()).ifBlank { code }
 
 @Composable private fun CountryDashboard(s: Snapshot, state: MainUiState, servers: List<ServerRowUiModel>, action: (MainAction) -> Unit) {
     val ranked = remember(servers) { servers.filter { it.testDelayMillis > 0 }.sortedBy { it.testDelayMillis }.take(3) }

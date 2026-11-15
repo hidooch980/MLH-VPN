@@ -30,8 +30,12 @@ data class MainUiState(
     val doubleColumnDisplay: Boolean = false,
     val shareQRCodeBitmap: android.graphics.Bitmap? = null,
     val isFavorite: Boolean = false,
-    val selectionReason: String? = null
+    val selectionReason: String? = null,
+    val preferredCountry: String? = null,
+    val connectionMode: ConnectionMode = ConnectionMode.AUTO,
 )
+
+enum class ConnectionMode { AUTO, WIREGUARD, SECURE }
 
 /**
  * All possible user interaction intents
@@ -64,6 +68,8 @@ sealed interface MainAction {
 
     data class SelectGroup(val groupId: String) : MainAction
     data class SelectServer(val guid: String) : MainAction
+    data class SelectCountry(val countryCode: String?) : MainAction
+    data class SelectConnectionMode(val mode: ConnectionMode) : MainAction
     data class RemoveServer(val guid: String) : MainAction
     data class EditServer(val guid: String, val profile: com.v2ray.ang.dto.entities.ProfileItem) : MainAction
     data class Search(val query: String) : MainAction
