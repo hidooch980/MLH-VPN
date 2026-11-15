@@ -45,4 +45,9 @@
     <string name="mlh_dns_protected">DNS برنامه داخل تونل فعال هدایت می‌شود</string>
     <string name="mlh_kill_switch_hint">در تنظیمات اندروید، VPN همیشگی و مسدودسازی اتصال بدون VPN را فعال کنید</string>
     <string name="mlh_security_settings">تنظیمات VPN</string>
+    <string name="mlh_settings_title">تنظیمات MLH</string>
+    <string name="mlh_settings_summary">تنظیمات ساده، امن و بدون بخش‌های کانفیگ فنی</string>
+    <string name="mlh_app_update">به‌روزرسانی برنامه</string>
+    <string name="mlh_app_update_hint">بررسی نسخه جدید و نصب با تأیید شما</string>
+    <string name="mlh_about">درباره برنامه</string>
 </resources>

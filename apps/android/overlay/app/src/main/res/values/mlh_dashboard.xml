@@ -45,4 +45,9 @@
     <string name="mlh_dns_protected">VPN DNS is routed inside the active tunnel</string>
     <string name="mlh_kill_switch_hint">Enable Always-on VPN and Block connections without VPN in Android settings</string>
     <string name="mlh_security_settings">VPN settings</string>
+    <string name="mlh_settings_title">MLH settings</string>
+    <string name="mlh_settings_summary">Simple and secure settings without technical configuration screens</string>
+    <string name="mlh_app_update">App update</string>
+    <string name="mlh_app_update_hint">Check for a new version and install with your confirmation</string>
+    <string name="mlh_about">About</string>
 </resources>

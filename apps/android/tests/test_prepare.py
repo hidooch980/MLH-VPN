@@ -54,8 +54,18 @@ class OverlayTests(unittest.TestCase):
         self.assertNotIn('v2rayNG', branded)
         self.assertEqual(branded.count('MLH VPN'), 2)
 
+    def test_legacy_profile_ui_is_removed_from_generated_app(self):
+        source = MODULE.read_text()
+        for filename in ('MainScreen.kt', 'MainTopBar.kt', 'MainImportMenu.kt', 'MainServerPager.kt'):
+            self.assertIn("'" + filename + "'", source)
+        self.assertIn('(legacy_main_ui / filename).unlink()', source)
+        self.assertIn("MainImportMenuTest.kt').unlink()", source)
+
     def test_dashboard_has_no_configuration_or_v2ray_entry(self):
         dashboard = (MODULE.parent / 'overlay/app/src/main/java/com/v2ray/ang/ui/main/MlhDashboard.kt').read_text()
+        activity = (MODULE.parent / 'overlay/app/src/main/java/com/v2ray/ang/ui/main/MainActivity.kt').read_text()
+        contract = (MODULE.parent / 'overlay/app/src/main/java/com/v2ray/ang/ui/main/MainContract.kt').read_text()
+        updater = (MODULE.parent / 'overlay/app/src/main/java/com/v2ray/ang/ui/checkupdate/CheckUpdateActivity.kt').read_text()
         persian = (MODULE.parent / 'overlay/app/src/main/res/values-fa/mlh_dashboard.xml').read_text()
         self.assertNotIn('MainProfilesScreen(', dashboard)
         self.assertNotIn('mlh_profiles', dashboard)
@@ -63,6 +73,12 @@ class OverlayTests(unittest.TestCase):
         self.assertNotIn('mlh_engine_warp', dashboard)
         self.assertNotIn('وی تو ری', persian)
         self.assertIn('mlh_smart_test', dashboard)
+        for removed_surface in ('ImportQRcode', 'ImportClipboard', 'ImportConfigLocal',
+                                'ImportManually', 'EditServer', 'ShareQRCode',
+                                'ShareClipboard', 'ShareFullContent', 'ExportAll'):
+            self.assertNotIn(removed_surface, activity + contract)
+        self.assertNotIn('CoreNativeManager', updater)
+        self.assertNotIn('libVersion', updater)
 
 
 if __name__ == '__main__':

@@ -77,7 +77,7 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Scaffold(containerColor = Ink, contentColor = White, bottomBar = {
             BottomNav(tab) { selected ->
-                if (selected == DashboardTab.SETTINGS) onNavigate(MainDestination.Settings) else tab = selected
+                tab = selected
             }
         }) { padding ->
             Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)
@@ -87,10 +87,29 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
                     DashboardTab.HOME -> PulseDashboard(snap, state, group.rows, onAction)
                     DashboardTab.COUNTRIES -> CountryDashboard(snap, state, group.rows, onAction)
                     DashboardTab.STATUS -> ControlDashboard(snap, state, onAction)
-                    DashboardTab.SETTINGS -> Unit
+                    DashboardTab.SETTINGS -> MlhSettingsDashboard(onAction, onNavigate)
                 }
             }
         }
+    }
+}
+
+@Composable private fun MlhSettingsDashboard(action: (MainAction) -> Unit, navigate: (MainDestination) -> Unit) = ScrollPage {
+    Text(stringResource(R.string.mlh_settings_title), Modifier.fillMaxWidth(), fontSize = 24.sp, fontWeight = FontWeight.Black)
+    Text(stringResource(R.string.mlh_settings_summary), Modifier.fillMaxWidth(), color = Muted, fontSize = 12.sp)
+    SettingsRow("↻", stringResource(R.string.mlh_app_update), stringResource(R.string.mlh_app_update_hint)) { navigate(MainDestination.CheckUpdate) }
+    SettingsRow("⬡", stringResource(R.string.mlh_security_settings), stringResource(R.string.mlh_kill_switch_hint)) { action(MainAction.OpenVpnSecuritySettings) }
+    SettingsRow("i", stringResource(R.string.mlh_about), stringResource(R.string.app_name)) { navigate(MainDestination.About) }
+}
+
+@Composable private fun SettingsRow(icon: String, title: String, detail: String, click: () -> Unit) = Surface(
+    Modifier.fillMaxWidth().clickable(onClick = click), color = Panel, shape = RoundedCornerShape(20.dp),
+    border = androidx.compose.foundation.BorderStroke(1.dp, White.copy(.07f)),
+) {
+    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        CircleLabel(icon, Color(0xFF10495B), Cyan)
+        Column(Modifier.weight(1f)) { Text(title, fontWeight = FontWeight.Bold, fontSize = 15.sp); Text(detail, color = Muted, fontSize = 10.sp, maxLines = 2) }
+        Text("‹", color = Muted, fontSize = 24.sp)
     }
 }
 
