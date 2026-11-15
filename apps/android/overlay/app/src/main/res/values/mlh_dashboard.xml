@@ -3,6 +3,7 @@
     <string name="mlh_connected">Connected</string>
     <string name="mlh_disconnected">Disconnected</string>
     <string name="mlh_exit">Exit location</string>
+    <string name="mlh_exit_ip">Exit IP</string>
     <string name="mlh_unknown">Unknown</string>
     <string name="mlh_timer">Session time</string>
     <string name="mlh_ping">Ping</string>
@@ -17,6 +18,8 @@
     <string name="mlh_connecting">Connecting…</string>
     <string name="mlh_engine_hint">Choose the connection engine</string>
     <string name="mlh_engine_auto">Smart</string>
+    <string name="mlh_connection_mode">Connection mode</string>
+    <string name="mlh_engine_secure">Secure core</string>
     <string name="mlh_smart_test">Smart test and choose best</string>
     <string name="mlh_smart_testing">Testing services…</string>
     <string name="mlh_country_auto">Automatic country</string>

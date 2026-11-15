@@ -35,6 +35,7 @@ class ReleaseAssetSelectorTest {
         assertTrue(ReleaseAssetSelector.compareVersions("0.6.0-rc.1", "0.6.0-beta.9") > 0)
         assertTrue(ReleaseAssetSelector.compareVersions("0.6.0", "0.6.0-rc.9") > 0)
         assertTrue(ReleaseAssetSelector.compareVersions("0.7.0-beta.1", "0.6.9") > 0)
+        assertTrue(ReleaseAssetSelector.compareVersions("1.0.0", "0.6.0-beta.2") > 0)
         assertEquals(0, ReleaseAssetSelector.compareVersions("0.6.0-beta.2", "0.6.0-beta.2"))
     }
     @Test fun `missing APK and non release links are rejected`() {
