@@ -207,12 +207,13 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
             }
         }
         Box(Modifier.fillMaxWidth()) {
-            val modeLabel = when (state.connectionMode) { ConnectionMode.AUTO -> stringResource(R.string.mlh_engine_auto); ConnectionMode.WIREGUARD -> "WireGuard / WARP"; ConnectionMode.SECURE -> stringResource(R.string.mlh_engine_secure) }
+            val modeLabel = when (state.connectionMode) { ConnectionMode.AUTO -> stringResource(R.string.mlh_engine_auto); ConnectionMode.FAST -> stringResource(R.string.mlh_engine_fast); ConnectionMode.STABLE -> stringResource(R.string.mlh_engine_stable); ConnectionMode.COMPATIBLE -> stringResource(R.string.mlh_engine_compatible) }
             PreferenceButton("⌁", stringResource(R.string.mlh_connection_mode), modeLabel) { modeMenu = true }
             DropdownMenu(modeMenu, { modeMenu = false }) {
                 DropdownMenuItem({ Text(stringResource(R.string.mlh_engine_auto)) }, onClick = { modeMenu = false; action(MainAction.SelectConnectionMode(ConnectionMode.AUTO)) })
-                DropdownMenuItem({ Text("WireGuard / WARP") }, onClick = { modeMenu = false; action(MainAction.SelectConnectionMode(ConnectionMode.WIREGUARD)) })
-                DropdownMenuItem({ Text(stringResource(R.string.mlh_engine_secure)) }, onClick = { modeMenu = false; action(MainAction.SelectConnectionMode(ConnectionMode.SECURE)) })
+                DropdownMenuItem({ Text(stringResource(R.string.mlh_engine_fast)) }, onClick = { modeMenu = false; action(MainAction.SelectConnectionMode(ConnectionMode.FAST)) })
+                DropdownMenuItem({ Text(stringResource(R.string.mlh_engine_stable)) }, onClick = { modeMenu = false; action(MainAction.SelectConnectionMode(ConnectionMode.STABLE)) })
+                DropdownMenuItem({ Text(stringResource(R.string.mlh_engine_compatible)) }, onClick = { modeMenu = false; action(MainAction.SelectConnectionMode(ConnectionMode.COMPATIBLE)) })
             }
         }
     }

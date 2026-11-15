@@ -34,7 +34,7 @@ data class MainUiState(
     val qualityAssessment: com.v2ray.ang.core.QualityAssessment? = null,
 )
 
-enum class ConnectionMode { AUTO, WIREGUARD, SECURE }
+enum class ConnectionMode { AUTO, FAST, STABLE, COMPATIBLE }
 
 /**
  * All possible user interaction intents
