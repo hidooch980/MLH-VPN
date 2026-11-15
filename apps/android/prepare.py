@@ -159,6 +159,17 @@ def prepare(root: Path) -> None:
             target = project / source.relative_to(HERE / 'overlay')
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, target)
+    # The MLH dashboard fully replaces the inherited profile/configuration UI.
+    # Remove those sources from the generated app so their hidden import,
+    # editor, share and raw-server surfaces cannot be compiled or reached.
+    legacy_main_ui = project / 'app/src/main/java/com/v2ray/ang/ui/main'
+    for filename in (
+        'MainScreen.kt',
+        'MainTopBar.kt',
+        'MainImportMenu.kt',
+        'MainServerPager.kt',
+    ):
+        (legacy_main_ui / filename).unlink()
     assets = project / 'app/src/main/assets'
     assets.mkdir(parents=True, exist_ok=True)
     (assets / 'mlh_upstream_license.txt').write_text((root / 'LICENSE').read_text())

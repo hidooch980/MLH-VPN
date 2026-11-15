@@ -54,6 +54,12 @@ class OverlayTests(unittest.TestCase):
         self.assertNotIn('v2rayNG', branded)
         self.assertEqual(branded.count('MLH VPN'), 2)
 
+    def test_legacy_profile_ui_is_removed_from_generated_app(self):
+        source = MODULE.read_text()
+        for filename in ('MainScreen.kt', 'MainTopBar.kt', 'MainImportMenu.kt', 'MainServerPager.kt'):
+            self.assertIn("'" + filename + "'", source)
+        self.assertIn('(legacy_main_ui / filename).unlink()', source)
+
     def test_dashboard_has_no_configuration_or_v2ray_entry(self):
         dashboard = (MODULE.parent / 'overlay/app/src/main/java/com/v2ray/ang/ui/main/MlhDashboard.kt').read_text()
         activity = (MODULE.parent / 'overlay/app/src/main/java/com/v2ray/ang/ui/main/MainActivity.kt').read_text()
