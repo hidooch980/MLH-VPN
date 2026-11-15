@@ -33,6 +33,7 @@ data class MainUiState(
     val selectionReason: String? = null,
     val preferredCountry: String? = null,
     val connectionMode: ConnectionMode = ConnectionMode.AUTO,
+    val qualityAssessment: com.v2ray.ang.core.QualityAssessment? = null,
 )
 
 enum class ConnectionMode { AUTO, WIREGUARD, SECURE }

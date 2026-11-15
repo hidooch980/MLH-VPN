@@ -21,4 +21,9 @@ class MlhDashboardTest {
         assertEquals(76, latencyScore(200))
         assertEquals(35, latencyScore(900))
     }
+    @Test fun `bitrate is formatted in network units`() {
+        assertEquals("0 bps", formatBitrate(0))
+        assertEquals("8 Kbps", formatBitrate(1_000))
+        assertEquals("16.0 Mbps", formatBitrate(2_000_000))
+    }
 }
