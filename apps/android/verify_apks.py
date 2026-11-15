@@ -20,7 +20,7 @@ for apk in sorted(args.directory.glob('*.apk')):
                 assert f'lib/{abi}/{library}' in names, f'{apk}: missing {abi}/{library}'
         build = json.loads(z.read('assets/mlh_build.json'))
         assert build['application_id'] == 'io.github.hidooch980.mlhvpn'
-        assert 'MLH VPN / v2rayNG' in z.read('assets/open_source_licenses.html').decode()
+        assert 'MolidoVPN AI / v2rayNG' in z.read('assets/open_source_licenses.html').decode()
         assert 'GNU GENERAL PUBLIC LICENSE' in z.read('assets/mlh_upstream_license.txt').decode()
         if 'universal' in apk.name:
             assert abis == expected
