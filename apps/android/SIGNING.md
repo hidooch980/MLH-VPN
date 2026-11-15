@@ -15,3 +15,16 @@ openssl cms -decrypt -binary -inform DER -in MLHVPN-signing-backup.cms \
 ```
 
 Verify the recovered certificate matches the APK's published certificate fingerprint before using it for an update. Debug APKs use another certificate and cannot update a signed release. Never silently uninstall an existing app: export its user data first.
+
+For version 1.1.0, download the `MLHVPN-unsigned` artifact from the verified candidate run and execute the repository helper in an offline signing environment:
+
+```sh
+ANDROID_HOME=/path/to/android-sdk \
+  bash apps/android/offline-sign-update.sh \
+  /path/to/MLHVPN-unsigned \
+  /secure/path/signing-key.pk8 \
+  /secure/path/signing-cert.pem \
+  /secure/output/mlh-1.1.0
+```
+
+The helper refuses a certificate whose SHA-256 fingerprint differs from the established release certificate. It disables v1/v4 signing, verifies every APK, reconstructs it byte-for-byte from a public signature patch, and writes private-key-free patches that are safe to review and commit. The private key is only read from the supplied external path and is never copied.
