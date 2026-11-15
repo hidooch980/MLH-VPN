@@ -170,6 +170,7 @@ def prepare(root: Path) -> None:
         'MainServerPager.kt',
     ):
         (legacy_main_ui / filename).unlink()
+    (project / 'app/src/test/java/com/v2ray/ang/ui/main/MainImportMenuTest.kt').unlink()
     assets = project / 'app/src/main/assets'
     assets.mkdir(parents=True, exist_ok=True)
     (assets / 'mlh_upstream_license.txt').write_text((root / 'LICENSE').read_text())

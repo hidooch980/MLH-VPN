@@ -59,6 +59,7 @@ class OverlayTests(unittest.TestCase):
         for filename in ('MainScreen.kt', 'MainTopBar.kt', 'MainImportMenu.kt', 'MainServerPager.kt'):
             self.assertIn("'" + filename + "'", source)
         self.assertIn('(legacy_main_ui / filename).unlink()', source)
+        self.assertIn("MainImportMenuTest.kt').unlink()", source)
 
     def test_dashboard_has_no_configuration_or_v2ray_entry(self):
         dashboard = (MODULE.parent / 'overlay/app/src/main/java/com/v2ray/ang/ui/main/MlhDashboard.kt').read_text()
