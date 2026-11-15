@@ -1,6 +1,6 @@
-# MLH VPN — standalone Android
+# MolidoVPN AI — standalone Android
 
-This is a reproducible branding/build overlay for **v2rayNG 2.3.15**. It runs locally on Android 7+ without the Molla FastAPI service, an account, billing, or a server deployment. Import an existing provider's configuration to connect. It does not create free servers or provide connectivity without a remote endpoint.
+This is a reproducible branding/build overlay for **v2rayNG 2.3.15**. It runs locally on Android 7+ without the optional MolidoVPN AI control plane, an account, billing, or a server deployment. Import an existing provider's configuration to connect. It does not create free servers or provide connectivity without a remote endpoint.
 
 The exact upstream commit, native core checksum, application ID and toolchain are recorded in `upstream.lock.json`. The tunnel, parser, transport and routing implementations are retained. A one-time catalog adds two public subscriptions to the existing storage and hourly updater; user deletions and preferences are preserved. See [SOURCES.md](SOURCES.md). The native app is the Android product; `../client` remains the earlier Flutter prototype.
 
