@@ -189,7 +189,9 @@ class MainViewModel(
                         return
                     }
                     val telemetry = uiState.value.telemetry
-                    val measuredRate = telemetry?.let { maxOf(it.sendRate, it.receiveRate).toLong() } ?: 0L
+                    val measuredRate = telemetry?.let {
+                        listOfNotNull(it.sendRate, it.receiveRate).maxOrNull()?.toLong()
+                    } ?: 0L
                     val assessment = SmartQualityEngine.assess(ProbeEvidence(
                         serverId = guid,
                         attempted = probe.attempted,
