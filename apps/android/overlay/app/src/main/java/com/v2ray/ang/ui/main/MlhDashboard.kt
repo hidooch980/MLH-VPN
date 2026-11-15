@@ -178,7 +178,7 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
             CountryBadge(s.code)
             Column { Text(stringResource(R.string.mlh_exit), color = Muted, fontSize = 12.sp); Text(s.country, fontWeight = FontWeight.Bold, fontSize = 18.sp); Text(s.ip, color = Muted, fontSize = 11.sp) }
         }
-        Column(horizontalAlignment = Alignment.End) { Text("تأییدشده", color = Mint, fontSize = 11.sp); Text("‹", fontSize = 28.sp) }
+        Column(horizontalAlignment = Alignment.End) { Text(if (s.connected) "اتصال فعال" else "بررسی نشده", color = if (s.connected) Mint else Muted, fontSize = 11.sp); Text("‹", fontSize = 28.sp) }
     }
 }
 
@@ -283,11 +283,11 @@ private fun countryName(code: String): String = Locale.Builder().setRegion(code)
     QualityChart(s.quality)
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         ControlTile("⌁", "وضعیت شبکه", if (s.connected) "اتصال پایدار" else "قطع", s.ping, Modifier.weight(1f))
-        ControlTile("⬡", "محافظت DNS", if (s.connected) "فعال" else "آماده", "داخل تونل", Modifier.weight(1f))
+        ControlTile("⬡", "مسیر DNS", if (s.connected) "از تونل" else "نامشخص", "آزمون نشت لازم است", Modifier.weight(1f))
     }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         ControlTile("★", "سرویس مورد علاقه", if (state.isFavorite) "ذخیره شده" else "انتخاب نشده", s.country, Modifier.weight(1f))
-        ControlTile("◷", "آخرین اتصال موفق", s.country, s.ip, Modifier.weight(1f))
+        ControlTile("◷", "خروجی فعلی", s.country, s.ip, Modifier.weight(1f))
     }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Metric("↑", stringResource(R.string.mlh_sent_total), s.sent, Modifier.weight(1f)); Metric("↓", stringResource(R.string.mlh_received_total), s.received, Modifier.weight(1f))
