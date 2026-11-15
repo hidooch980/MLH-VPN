@@ -86,7 +86,6 @@ class MainViewModel(
             selectedGroupId = dataSource.getSelectedSubscriptionId(),
             selectedGuid = dataSource.getSelectServer(),
             isFavorite = SmartSelectionStore.isFavorite(dataSource.getSelectServer()),
-            confirmRemove = dataSource.getConfirmRemove(),
             doubleColumnDisplay = dataSource.getDoubleColumnDisplay(),
             preferredCountry = SmartSelectionStore.preferredCountry(),
             connectionMode = runCatching {
@@ -341,48 +340,18 @@ class MainViewModel(
         when (action) {
             MainAction.ConnectionRequested -> _uiState.update { it.copy(connectingUntil = android.os.SystemClock.elapsedRealtime() + 30_000) }
             MainAction.Initialize -> initialize()
-            MainAction.RefreshGroups -> setupGroupTab(forceRefresh = true)
-            MainAction.TestAllServers -> testAllRealPing(true)
             MainAction.TestRealAllServers -> testAllRealPing()
             MainAction.ToggleFavorite -> toggleFavorite()
             MainAction.CancelTesting -> cancelAllPing()
-            MainAction.RemoveAllServers -> removeAllServerAsync()
-            MainAction.RemoveDuplicateServers -> removeDuplicateServerAsync()
-            MainAction.RemoveInvalidServers -> removeInvalidServerAsync()
-            MainAction.SortByTestResults -> sortByTestResultsAsync()
-            MainAction.UpdateSubscriptions -> importConfigViaSub(uiState.value.selectedGroupId)
-            is MainAction.UpdateGroupSubscription -> importConfigViaSub(action.groupId)
-            MainAction.ExportAll -> exportAllAsync()
-            is MainAction.SelectGroup -> subscriptionIdChanged(action.groupId)
             is MainAction.SelectServer -> updateSelectedGuid(action.guid)
             is MainAction.SelectCountry -> selectCountry(action.countryCode)
             is MainAction.SelectConnectionMode -> selectConnectionMode(action.mode)
-            is MainAction.RemoveServer -> removeServerAndRefresh(action.guid)
-            is MainAction.Search -> filterConfig(action.query)
-            is MainAction.ImportBatchConfig -> importBatchConfig(action.configText)
             MainAction.LocateHandled -> consumeLocateTarget()
-            is MainAction.ShareQRCode -> {
-                val bitmap = dataSource.share2QRCode(action.guid)
-                _uiState.update { it.copy(shareQRCodeBitmap = bitmap) }
-            }
-
-            MainAction.DismissQRCodeDialog -> {
-                _uiState.update { it.copy(shareQRCodeBitmap = null) }
-            }
-
             MainAction.ToggleService,
             MainAction.TestCurrentServer,
             MainAction.OpenVpnSecuritySettings,
-            MainAction.ImportQRcode,
-            MainAction.ImportClipboard,
-            MainAction.ImportConfigLocal,
-            is MainAction.ImportManually,
             MainAction.RestartService,
-            MainAction.LocateSelectedServer,
-            is MainAction.EditServer,
-            is MainAction.ShareClipboard,
-            is MainAction.ShareFullContent,
-            is MainAction.OpenSubscriptionLink -> {
+            MainAction.LocateSelectedServer -> {
                 // Handled by Activity via its onAction lambda
             }
         }
@@ -434,7 +403,6 @@ class MainViewModel(
     fun refreshUiSettings() {
         _uiState.update {
             it.copy(
-                confirmRemove = dataSource.getConfirmRemove(),
                 doubleColumnDisplay = dataSource.getDoubleColumnDisplay()
             )
         }

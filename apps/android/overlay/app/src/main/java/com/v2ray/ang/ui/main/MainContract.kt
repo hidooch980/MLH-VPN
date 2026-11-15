@@ -26,9 +26,7 @@ data class MainUiState(
     val isTesting: Boolean = false,
     val status: MainStatus = MainStatus.Disconnected,
     val locateTarget: LocateTarget? = null,
-    val confirmRemove: Boolean = false,
     val doubleColumnDisplay: Boolean = false,
-    val shareQRCodeBitmap: android.graphics.Bitmap? = null,
     val isFavorite: Boolean = false,
     val selectionReason: String? = null,
     val preferredCountry: String? = null,
@@ -44,43 +42,17 @@ enum class ConnectionMode { AUTO, WIREGUARD, SECURE }
 sealed interface MainAction {
     data object ConnectionRequested : MainAction
     data object Initialize : MainAction
-    data object RefreshGroups : MainAction
     data object ToggleService : MainAction
     data object TestCurrentServer : MainAction
     data object ToggleFavorite : MainAction
     data object OpenVpnSecuritySettings : MainAction
-    data object TestAllServers : MainAction
     data object TestRealAllServers : MainAction
     data object CancelTesting : MainAction
-    data object RemoveAllServers : MainAction
-    data object RemoveDuplicateServers : MainAction
-    data object RemoveInvalidServers : MainAction
-    data object SortByTestResults : MainAction
-    data object UpdateSubscriptions : MainAction
-    data class UpdateGroupSubscription(val groupId: String) : MainAction
-    data object ExportAll : MainAction
-
-    data object ImportQRcode : MainAction
-    data object ImportClipboard : MainAction
-    data object ImportConfigLocal : MainAction
-    data class ImportManually(val type: Int) : MainAction
     data object RestartService : MainAction
     data object LocateSelectedServer : MainAction
 
-    data class SelectGroup(val groupId: String) : MainAction
     data class SelectServer(val guid: String) : MainAction
     data class SelectCountry(val countryCode: String?) : MainAction
     data class SelectConnectionMode(val mode: ConnectionMode) : MainAction
-    data class RemoveServer(val guid: String) : MainAction
-    data class EditServer(val guid: String, val profile: com.v2ray.ang.dto.entities.ProfileItem) : MainAction
-    data class Search(val query: String) : MainAction
-    data class ShareQRCode(val guid: String) : MainAction
-    data class ShareClipboard(val guid: String) : MainAction
-    data class ShareFullContent(val guid: String) : MainAction
-    data object DismissQRCodeDialog : MainAction
-    data class OpenSubscriptionLink(val url: String) : MainAction
-
-    data class ImportBatchConfig(val configText: String) : MainAction
-
     data object LocateHandled : MainAction
 }
