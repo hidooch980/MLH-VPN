@@ -112,6 +112,20 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
                 Metric(stringResource(R.string.mlh_send), if (fresh) traffic?.sendRate?.let { formatTraffic(it) + "/s" } ?: unavailable else unavailable, Modifier.weight(1f))
                 Metric(stringResource(R.string.mlh_receive), if (fresh) traffic?.receiveRate?.let { formatTraffic(it) + "/s" } ?: unavailable else unavailable, Modifier.weight(1f))
             }
+            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF132448), contentColor = Color.White)) {
+                Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(stringResource(R.string.mlh_security), style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(if (state.isRunning) R.string.mlh_dns_protected else R.string.mlh_kill_switch_hint),
+                            style = MaterialTheme.typography.bodySmall)
+                    }
+                    TextButton(onClick = { onAction(MainAction.OpenVpnSecuritySettings) }) {
+                        Text(stringResource(R.string.mlh_security_settings))
+                    }
+                }
+            }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Metric(stringResource(R.string.mlh_sent_total), traffic?.sent?.let { formatTraffic(it.toDouble()) } ?: unavailable, Modifier.weight(1f))
                 Metric(stringResource(R.string.mlh_received_total), traffic?.received?.let { formatTraffic(it.toDouble()) } ?: unavailable, Modifier.weight(1f))

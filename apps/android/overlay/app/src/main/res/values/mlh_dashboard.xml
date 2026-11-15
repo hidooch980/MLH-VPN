@@ -33,4 +33,8 @@
     <string name="mlh_reason_better">Changed because measured quality was materially better</string>
     <string name="mlh_reason_stable">Kept the current service to avoid an unnecessary interruption</string>
     <string name="mlh_reason_unavailable">No reachable service was found</string>
+    <string name="mlh_security">Connection protection</string>
+    <string name="mlh_dns_protected">VPN DNS is routed inside the active tunnel</string>
+    <string name="mlh_kill_switch_hint">Enable Always-on VPN and Block connections without VPN in Android settings</string>
+    <string name="mlh_security_settings">VPN settings</string>
 </resources>

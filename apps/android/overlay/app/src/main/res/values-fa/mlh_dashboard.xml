@@ -33,4 +33,8 @@
     <string name="mlh_reason_better">به‌دلیل برتری محسوس کیفیت اندازه‌گیری‌شده تغییر کرد</string>
     <string name="mlh_reason_stable">برای جلوگیری از قطع غیرضروری، سرویس فعلی حفظ شد</string>
     <string name="mlh_reason_unavailable">هیچ سرویس قابل‌دسترسی پیدا نشد</string>
+    <string name="mlh_security">محافظت اتصال</string>
+    <string name="mlh_dns_protected">DNS برنامه داخل تونل فعال هدایت می‌شود</string>
+    <string name="mlh_kill_switch_hint">در تنظیمات اندروید، VPN همیشگی و مسدودسازی اتصال بدون VPN را فعال کنید</string>
+    <string name="mlh_security_settings">تنظیمات VPN</string>
 </resources>

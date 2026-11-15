@@ -336,6 +336,7 @@ class MainViewModel(
 
             MainAction.ToggleService,
             MainAction.TestCurrentServer,
+            MainAction.OpenVpnSecuritySettings,
             MainAction.ImportQRcode,
             MainAction.ImportClipboard,
             MainAction.ImportConfigLocal,
