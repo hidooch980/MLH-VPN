@@ -41,13 +41,13 @@ jobs:
           log-accepted-android-sdk-licenses: false
       - name: Build and test installable preview APKs
         run: bash apps/android/build.sh "$PWD/work/android" debug
-      - name: Verify packaged native engines and MLH identity
+      - name: Verify packaged native engines and MolidoVPN AI identity
         run: |
           python3 apps/android/verify_apks.py work/android/V2rayNG/app/build/outputs/apk/fdroid/debug
           for apk in work/android/V2rayNG/app/build/outputs/apk/fdroid/debug/*.apk; do
             "$ANDROID_HOME/build-tools/37.0.0/aapt2" dump badging "$apk" > "$RUNNER_TEMP/badging.txt"
             grep -F "package: name='io.github.hidooch980.mlhvpn.fdroid'" "$RUNNER_TEMP/badging.txt"
-            grep -F "application-label:'MLH VPN'" "$RUNNER_TEMP/badging.txt"
+            grep -F "application-label:'MolidoVPN AI'" "$RUNNER_TEMP/badging.txt"
           done
       - name: Bundle source and checksums
         run: |
