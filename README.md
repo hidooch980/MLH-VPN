@@ -1,12 +1,12 @@
-# MLH VPN
+# MolidoVPN AI
 
-MLH VPN is an independent, cross-platform VPN product for personal and commercial subscriptions.
+MolidoVPN AI is an independent, cross-platform VPN product for personal and commercial subscriptions.
 
 ## Standalone Android client
 
 The Android implementation now has a pinned v2rayNG 2.3.15 build overlay with the
-upstream protocol/import/VPN implementation, branded MLH VPN. It requires **no
-MLH backend or newly provisioned server**: import an existing VPN provider's
+upstream protocol/import/VPN implementation, branded MolidoVPN AI. It requires **no
+MolidoVPN AI control plane or newly provisioned server**: import an existing VPN provider's
 configuration or subscription. A remote VPN/proxy endpoint is still necessary.
 
 See [Android build/source](apps/android/README.md), [Persian installation guide](apps/android/INSTALL.fa.md)
@@ -50,3 +50,8 @@ Never commit credentials, private keys, subscription tokens, real production end
 The standalone Android derivative and overlay use GPL-3.0 (see `apps/android/LICENSE`). A license for the unrelated original project components has not been selected. Do not import code from the AGPL-3.0 MSN-GUARD reference project unless the project explicitly adopts the applicable license obligations after legal review. All rights reserved unless a license is added explicitly.
 
 See [the current audit](docs/AUDIT_2026-11-13.md), [architecture](docs/ARCHITECTURE.md), [API contract](docs/API_CONTRACT.md), and [roadmap](docs/ROADMAP.md).
+
+
+## MolidoVPN AI redesign
+
+The active redesign work is tracked on [feature/molidovpn-ai-redesign](https://github.com/hidooch980/MLH-VPN/tree/feature/molidovpn-ai-redesign). See [the redesign blueprint](docs/MOLIDOVPN_AI_REDESIGN.md). The product branding is being migrated while the repository slug and Android application ID remain unchanged until signing identity and upgrade compatibility are verified.
