@@ -1,6 +1,5 @@
 package com.v2ray.ang.ui.main
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -9,7 +8,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -18,28 +16,26 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.v2ray.ang.R
+import com.v2ray.ang.core.ProbeEvidence
+import com.v2ray.ang.core.QualityGrade
+import com.v2ray.ang.core.SmartQualityEngine
 import java.util.Locale
 
 @Composable
 fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onNavigate: (MainDestination) -> Unit) {
-    var profiles by rememberSaveable { mutableStateOf(false) }
-    if (profiles) {
-        BackHandler { profiles = false }
-        MainProfilesScreen(mainViewModel, onAction, onNavigate)
-        return
-    }
     val state by mainViewModel.uiState.collectAsStateWithLifecycle()
     val now by mainViewModel.clock.collectAsStateWithLifecycle()
     val connecting = !state.isRunning && now < state.connectingUntil
     val unknown = stringResource(R.string.mlh_unknown)
     val unavailable = stringResource(R.string.mlh_unavailable)
     val result = (state.status as? MainStatus.ConnectionTest)?.result?.takeIf { state.isRunning && it.delayMillis >= 0 }
+    val quality = result?.let { SmartQualityEngine.assess(ProbeEvidence("active", 1, listOf(it.delayMillis), verifiedCountryCode = it.country)) }
     val traffic = state.telemetry?.takeIf { state.isRunning }
     val fresh = traffic != null && now - traffic.sampledAt in 0..10_000
     val country = result?.country?.takeIf { it.isNotBlank() }?.let {
         if (Regex("[A-Za-z]{2}").matches(it)) Locale.Builder().setRegion(it.uppercase(Locale.ROOT)).build().displayCountry else it
     } ?: unknown
-    Scaffold { padding ->
+    Scaffold(containerColor = Color(0xFF06152E), contentColor = Color(0xFFF4F8FF)) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)
             .verticalScroll(rememberScrollState()).padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -47,28 +43,55 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineSmall)
-                TextButton(onClick = { profiles = true }) { Text(stringResource(R.string.mlh_profiles)) }
+                AssistChip(
+                    onClick = {},
+                    label = { Text(stringResource(if (state.isRunning) R.string.mlh_connected else R.string.mlh_disconnected)) },
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = if (state.isRunning) Color(0xFF0E6B63) else Color(0xFF14284F),
+                        labelColor = Color.White,
+                    ),
+                )
             }
             Column(Modifier.fillMaxWidth().background(
-                Brush.linearGradient(listOf(Color(0xFF083D58), Color(0xFF116D79))), RoundedCornerShape(28.dp))
+                Brush.linearGradient(listOf(Color(0xFF12395E), Color(0xFF116D79))), RoundedCornerShape(28.dp))
                 .padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(stringResource(if (connecting) R.string.mlh_connecting else if (state.isRunning) R.string.mlh_connected else R.string.mlh_disconnected),
                     color = Color.White, style = MaterialTheme.typography.titleLarge)
                 Button(onClick = { onAction(MainAction.ToggleService) }, enabled = !connecting, shape = CircleShape,
                     modifier = Modifier.size(132.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF63F5CD), contentColor = Color(0xFF083D58))) {
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF38C4FF), contentColor = Color(0xFF041A31))) {
                     Text(stringResource(if (state.isRunning) R.string.mlh_disconnect else R.string.mlh_connect))
                 }
                 Text(stringResource(R.string.mlh_timer), color = Color.White.copy(alpha = 0.8f))
                 Text(traffic?.let { formatSessionTime((now - it.startedAt).coerceAtLeast(0)) } ?: unavailable,
                     color = Color.White, style = MaterialTheme.typography.headlineMedium)
             }
-            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+            Text(stringResource(R.string.mlh_engine_hint), style = MaterialTheme.typography.labelLarge)
+            AssistChip(onClick = {}, label = { Text(stringResource(R.string.mlh_engine_auto)) })
+            Button(
+                onClick = { onAction(MainAction.TestRealAllServers) },
+                enabled = !state.isTesting && !state.isRunning,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D7890)),
+            ) { Text(stringResource(if (state.isTesting) R.string.mlh_smart_testing else R.string.mlh_smart_test)) }
+            state.selectionReason?.let { reason ->
+                Text(stringResource(selectionReasonResource(reason)), style = MaterialTheme.typography.bodySmall)
+            }
+            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF132448), contentColor = Color.White)) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.mlh_exit), style = MaterialTheme.typography.labelLarge)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(stringResource(R.string.mlh_exit), style = MaterialTheme.typography.labelLarge)
+                        TextButton(
+                            onClick = { onAction(MainAction.ToggleFavorite) },
+                            enabled = state.selectedGuid != null,
+                        ) { Text(stringResource(if (state.isFavorite) R.string.mlh_favorite_remove else R.string.mlh_favorite_add)) }
+                    }
+                    Text(stringResource(R.string.mlh_country_auto), color = Color(0xFF20BFD2))
                     Text(country, style = MaterialTheme.typography.titleLarge)
                     Text(result?.ipAddress?.takeIf { it.isNotBlank() } ?: unknown)
+                    Text(stringResource(R.string.mlh_quality) + ": " + stringResource(qualityResource(quality?.grade)))
                     TextButton(enabled = state.isRunning && !state.isTesting,
                         onClick = { onAction(MainAction.TestCurrentServer) }) { Text(stringResource(R.string.mlh_probe)) }
                 }
@@ -78,6 +101,20 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
                 Metric(stringResource(R.string.mlh_send), if (fresh) traffic?.sendRate?.let { formatTraffic(it) + "/s" } ?: unavailable else unavailable, Modifier.weight(1f))
                 Metric(stringResource(R.string.mlh_receive), if (fresh) traffic?.receiveRate?.let { formatTraffic(it) + "/s" } ?: unavailable else unavailable, Modifier.weight(1f))
             }
+            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF132448), contentColor = Color.White)) {
+                Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(stringResource(R.string.mlh_security), style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(if (state.isRunning) R.string.mlh_dns_protected else R.string.mlh_kill_switch_hint),
+                            style = MaterialTheme.typography.bodySmall)
+                    }
+                    TextButton(onClick = { onAction(MainAction.OpenVpnSecuritySettings) }) {
+                        Text(stringResource(R.string.mlh_security_settings))
+                    }
+                }
+            }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Metric(stringResource(R.string.mlh_sent_total), traffic?.sent?.let { formatTraffic(it.toDouble()) } ?: unavailable, Modifier.weight(1f))
                 Metric(stringResource(R.string.mlh_received_total), traffic?.received?.let { formatTraffic(it.toDouble()) } ?: unavailable, Modifier.weight(1f))
@@ -86,9 +123,26 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
     }
 }
 
+private fun qualityResource(grade: QualityGrade?): Int = when (grade) {
+    QualityGrade.EXCELLENT -> R.string.mlh_quality_excellent
+    QualityGrade.GOOD -> R.string.mlh_quality_good
+    QualityGrade.FAIR -> R.string.mlh_quality_fair
+    QualityGrade.POOR -> R.string.mlh_quality_poor
+    QualityGrade.UNAVAILABLE, null -> R.string.mlh_unavailable
+}
+
+private fun selectionReasonResource(reason: String): Int = when (reason) {
+    "no_current_server" -> R.string.mlh_reason_first_choice
+    "current_unhealthy" -> R.string.mlh_reason_unhealthy
+    "material_quality_gain" -> R.string.mlh_reason_better
+    "keep_stable_connection" -> R.string.mlh_reason_stable
+    else -> R.string.mlh_reason_unavailable
+}
+
 @Composable
 private fun Metric(label: String, value: String, modifier: Modifier) {
-    Card(modifier, shape = RoundedCornerShape(20.dp)) {
+    Card(modifier, shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF132448), contentColor = Color.White)) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(label, style = MaterialTheme.typography.labelMedium)
             Text(value, style = MaterialTheme.typography.titleMedium)

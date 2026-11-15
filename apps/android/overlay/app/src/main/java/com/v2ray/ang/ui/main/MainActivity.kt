@@ -111,6 +111,7 @@ class MainActivity : HelperBaseComponentActivity() {
                 when (action) {
                     MainAction.ToggleService -> handleFabAction()
                     MainAction.TestCurrentServer -> handleLayoutTestClick()
+                    MainAction.OpenVpnSecuritySettings -> openVpnSecuritySettings()
                     MainAction.ImportQRcode -> importQRcode()
                     MainAction.ImportClipboard -> importClipboard()
                     MainAction.ImportConfigLocal -> importConfigLocal()
@@ -191,6 +192,11 @@ class MainActivity : HelperBaseComponentActivity() {
         if (mainViewModel.uiState.value.isRunning) {
             mainViewModel.testCurrentServerRealPing()
         }
+    }
+
+    private fun openVpnSecuritySettings() {
+        runCatching { startActivity(Intent(android.provider.Settings.ACTION_VPN_SETTINGS)) }
+            .onFailure { toastError(R.string.toast_failure) }
     }
 
     private fun startV2Ray() {

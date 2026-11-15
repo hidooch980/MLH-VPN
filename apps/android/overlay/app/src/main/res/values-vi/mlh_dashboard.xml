@@ -10,7 +10,6 @@
     <string name="mlh_receive">Receive</string>
     <string name="mlh_sent_total">Total sent</string>
     <string name="mlh_received_total">Total received</string>
-    <string name="mlh_profiles">Configurations</string>
     <string name="mlh_probe">Check exit and ping</string>
     <string name="mlh_connect">Connect</string>
     <string name="mlh_disconnect">Disconnect</string>

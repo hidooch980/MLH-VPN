@@ -54,6 +54,16 @@ class OverlayTests(unittest.TestCase):
         self.assertNotIn('v2rayNG', branded)
         self.assertEqual(branded.count('MLH VPN'), 2)
 
+    def test_dashboard_has_no_configuration_or_v2ray_entry(self):
+        dashboard = (MODULE.parent / 'overlay/app/src/main/java/com/v2ray/ang/ui/main/MlhDashboard.kt').read_text()
+        persian = (MODULE.parent / 'overlay/app/src/main/res/values-fa/mlh_dashboard.xml').read_text()
+        self.assertNotIn('MainProfilesScreen(', dashboard)
+        self.assertNotIn('mlh_profiles', dashboard)
+        self.assertNotIn('V2Ray', dashboard)
+        self.assertNotIn('mlh_engine_warp', dashboard)
+        self.assertNotIn('وی تو ری', persian)
+        self.assertIn('mlh_smart_test', dashboard)
+
 
 if __name__ == '__main__':
     unittest.main()

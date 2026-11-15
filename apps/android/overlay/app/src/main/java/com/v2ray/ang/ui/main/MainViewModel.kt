@@ -7,6 +7,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.v2ray.ang.AppConfig
 import com.v2ray.ang.R
+import com.v2ray.ang.core.ProbeEvidence
+import com.v2ray.ang.core.SmartQualityEngine
+import com.v2ray.ang.core.SmartSelectionStore
 import com.v2ray.ang.dto.ConnectionTestResult
 import com.v2ray.ang.dto.GroupMapItem
 import com.v2ray.ang.dto.LocateTarget
@@ -82,6 +85,7 @@ class MainViewModel(
         MainUiState(
             selectedGroupId = dataSource.getSelectedSubscriptionId(),
             selectedGuid = dataSource.getSelectServer(),
+            isFavorite = SmartSelectionStore.isFavorite(dataSource.getSelectServer()),
             confirmRemove = dataSource.getConfirmRemove(),
             doubleColumnDisplay = dataSource.getDoubleColumnDisplay()
         )
@@ -146,6 +150,7 @@ class MainViewModel(
             MainServiceEvent.StateNotRunning -> updateRunningState(false, clearTestingText = false)
             MainServiceEvent.StateStartSuccess -> {
                 toastSuccess(R.string.toast_services_success)
+                uiState.value.selectedGuid?.let { SmartSelectionStore.recordSuccessfulConnection(it, null, null) }
                 updateRunningState(true)
             }
 
@@ -161,6 +166,19 @@ class MainViewModel(
             MainServiceEvent.StateStopSuccess -> updateRunningState(false)
             is MainServiceEvent.MeasureDelayResult -> {
                 if (!uiState.value.isRunning || !testRequests.completeCurrent(event.requestId)) return
+                uiState.value.selectedGuid?.let { guid ->
+                    val assessment = SmartQualityEngine.assess(ProbeEvidence(
+                        serverId = guid,
+                        attempted = 1,
+                        latencyMillis = listOf(event.result.delayMillis),
+                        verifiedCountryCode = event.result.country,
+                    ))
+                    if (assessment.reachable) {
+                        SmartSelectionStore.recordSuccessfulConnection(
+                            guid, assessment.verifiedCountryCode, assessment.score,
+                        )
+                    }
+                }
                 _uiState.update { it.copy(isTesting = testRequests.isTesting, status = MainStatus.ConnectionTest(event.result)) }
             }
 
@@ -294,6 +312,7 @@ class MainViewModel(
             MainAction.RefreshGroups -> setupGroupTab(forceRefresh = true)
             MainAction.TestAllServers -> testAllRealPing(true)
             MainAction.TestRealAllServers -> testAllRealPing()
+            MainAction.ToggleFavorite -> toggleFavorite()
             MainAction.CancelTesting -> cancelAllPing()
             MainAction.RemoveAllServers -> removeAllServerAsync()
             MainAction.RemoveDuplicateServers -> removeDuplicateServerAsync()
@@ -319,6 +338,7 @@ class MainViewModel(
 
             MainAction.ToggleService,
             MainAction.TestCurrentServer,
+            MainAction.OpenVpnSecuritySettings,
             MainAction.ImportQRcode,
             MainAction.ImportClipboard,
             MainAction.ImportConfigLocal,
@@ -793,7 +813,12 @@ class MainViewModel(
 
     fun updateSelectedGuid(guid: String) {
         dataSource.setSelectServer(guid)
-        _uiState.update { it.copy(selectedGuid = guid) }
+        _uiState.update { it.copy(selectedGuid = guid, isFavorite = SmartSelectionStore.isFavorite(guid)) }
+    }
+
+    private fun toggleFavorite() {
+        val guid = uiState.value.selectedGuid ?: return
+        _uiState.update { it.copy(isFavorite = SmartSelectionStore.toggleFavorite(guid)) }
     }
 
     fun refreshSelectedGuid() {
@@ -915,6 +940,23 @@ class MainViewModel(
 
     private fun onTestsFinished(requestId: String) {
         if (testRequests.completeBulk(requestId) == null) return
+        val assessments = currentServers().map { server ->
+            SmartQualityEngine.assess(ProbeEvidence(
+                serverId = server.guid,
+                attempted = 1,
+                latencyMillis = listOf(server.testDelayMillis).filter { it > 0 },
+            ))
+        }
+        val decision = SmartQualityEngine.selectBest(assessments, uiState.value.selectedGuid)
+        if (!uiState.value.isRunning && decision.shouldSwitch) {
+            decision.selected?.let { selected ->
+                updateSelectedGuid(selected.serverId)
+                SmartSelectionStore.recordSuccessfulConnection(
+                    selected.serverId, selected.verifiedCountryCode, selected.score,
+                )
+            }
+        }
+        _uiState.update { it.copy(selectionReason = decision.reason) }
         resetTestStatus()
         viewModelScope.launch(ioDispatcher) {
             cacheMutex.withLock { groupDataCache.clear() }

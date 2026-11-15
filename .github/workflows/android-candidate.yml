@@ -1,7 +1,8 @@
 name: Android release candidate
 on:
+  workflow_dispatch:
   push:
-    branches: ['codex/android-0.5']
+    branches: ['codex/engine-redesign']
     paths: ['apps/android/**', '.github/workflows/android-candidate.yml']
 permissions:
   contents: read
