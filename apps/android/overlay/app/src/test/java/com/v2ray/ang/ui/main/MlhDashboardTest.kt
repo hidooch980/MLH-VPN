@@ -14,4 +14,11 @@ class MlhDashboardTest {
         assertEquals("1.0 KiB", formatTraffic(1024.0))
         assertEquals("1.0 MiB", formatTraffic(1048576.0))
     }
+    @Test fun `latency score uses stable quality bands`() {
+        assertEquals(0, latencyScore(-1))
+        assertEquals(96, latencyScore(80))
+        assertEquals(88, latencyScore(81))
+        assertEquals(76, latencyScore(200))
+        assertEquals(35, latencyScore(900))
+    }
 }
