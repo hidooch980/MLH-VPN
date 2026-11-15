@@ -48,11 +48,11 @@ class OverlayTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'native core'):
                 prepare.download_core(Path('/unused'))
 
-    def test_visible_branding_uses_mlh_name(self):
+    def test_visible_branding_uses_molido_name(self):
         source = '<string name="app_name">v2rayNG</string><string>v2rayNG service</string>'
-        branded = source.replace('v2rayNG', 'MLH VPN')
+        branded = source.replace('v2rayNG', 'MolidoVPN AI')
         self.assertNotIn('v2rayNG', branded)
-        self.assertEqual(branded.count('MLH VPN'), 2)
+        self.assertEqual(branded.count('MolidoVPN AI'), 2)
 
     def test_legacy_profile_ui_is_removed_from_generated_app(self):
         source = MODULE.read_text()
