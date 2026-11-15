@@ -10,6 +10,7 @@ import com.v2ray.ang.R
 import com.v2ray.ang.core.ProbeEvidence
 import com.v2ray.ang.core.SmartQualityEngine
 import com.v2ray.ang.core.SmartSelectionStore
+import com.v2ray.ang.core.ConnectionModePolicy
 import com.v2ray.ang.dto.ConnectionTestResult
 import com.v2ray.ang.dto.GroupMapItem
 import com.v2ray.ang.dto.LocateTarget
@@ -371,16 +372,12 @@ class MainViewModel(
     private fun selectConnectionMode(mode: ConnectionMode) {
         SmartSelectionStore.setConnectionMode(mode.name)
         _uiState.update { it.copy(connectionMode = mode) }
-        if (mode == ConnectionMode.AUTO) return
         val compatible = currentServers().filter { server ->
-            val type = server.profile.configType.name.uppercase()
-            when (mode) {
-                ConnectionMode.WIREGUARD -> type.contains("WIREGUARD")
-                ConnectionMode.SECURE -> !type.contains("WIREGUARD")
-                ConnectionMode.AUTO -> true
-            }
+            ConnectionModePolicy.supports(mode, server.profile.configType.name)
         }
-        compatible.minByOrNull { it.testDelayMillis.takeIf { delay -> delay > 0 } ?: Long.MAX_VALUE }
+        compatible.minByOrNull {
+            ConnectionModePolicy.rank(mode, it.profile.configType.name, it.testDelayMillis)
+        }
             ?.guid?.let(::updateSelectedGuid)
     }
 

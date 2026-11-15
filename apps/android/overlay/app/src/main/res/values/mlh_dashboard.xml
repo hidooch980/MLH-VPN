@@ -25,6 +25,9 @@
     <string name="mlh_engine_auto">Smart</string>
     <string name="mlh_connection_mode">Connection mode</string>
     <string name="mlh_engine_secure">Secure core</string>
+    <string name="mlh_engine_fast">Fast</string>
+    <string name="mlh_engine_stable">Stable</string>
+    <string name="mlh_engine_compatible">Compatible</string>
     <string name="mlh_smart_test">Smart test and choose best</string>
     <string name="mlh_quality_test">Test connection speed and quality</string>
     <string name="mlh_smart_testing">Testing services…</string>

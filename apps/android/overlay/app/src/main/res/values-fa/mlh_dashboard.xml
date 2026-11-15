@@ -25,6 +25,9 @@
     <string name="mlh_engine_auto">هوشمند</string>
     <string name="mlh_connection_mode">حالت اتصال</string>
     <string name="mlh_engine_secure">هسته امن</string>
+    <string name="mlh_engine_fast">سریع</string>
+    <string name="mlh_engine_stable">پایدار</string>
+    <string name="mlh_engine_compatible">سازگار</string>
     <string name="mlh_smart_test">تست هوشمند و انتخاب بهترین</string>
     <string name="mlh_quality_test">تست سرعت و کیفیت ارتباط</string>
     <string name="mlh_smart_testing">در حال تست سرویس‌ها…</string>
