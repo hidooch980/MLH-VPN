@@ -56,7 +56,9 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
     var tab by rememberSaveable { mutableStateOf(DashboardTab.HOME) }
     val unavailable = stringResource(R.string.mlh_unavailable)
     val result = (state.status as? MainStatus.ConnectionTest)?.result?.takeIf { state.isRunning && it.delayMillis >= 0 }
-    val quality = result?.let { SmartQualityEngine.assess(ProbeEvidence("active", 1, listOf(it.delayMillis), verifiedCountryCode = it.country)) }
+    val quality = state.qualityAssessment ?: result?.let {
+        SmartQualityEngine.assess(ProbeEvidence("active", 1, listOf(it.delayMillis), verifiedCountryCode = it.country))
+    }
     val traffic = state.telemetry?.takeIf { state.isRunning }
     val fresh = traffic != null && now - traffic.sampledAt in 0..10_000
     val code = result?.country?.takeIf { Regex("[A-Za-z]{2}").matches(it) }?.uppercase(Locale.ROOT)
@@ -80,7 +82,7 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
         }) { padding ->
             Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)
                 .background(Brush.verticalGradient(listOf(Ink, Night)))) {
-                Header(snap)
+                Header()
                 when (tab) {
                     DashboardTab.HOME -> PulseDashboard(snap, state, group.rows, onAction)
                     DashboardTab.COUNTRIES -> CountryDashboard(snap, state, group.rows, onAction)
@@ -92,24 +94,21 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
     }
 }
 
-@Composable private fun Header(s: Snapshot) {
-    Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-        Text("◉", color = Muted, fontSize = 21.sp)
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            Column(horizontalAlignment = Alignment.End) {
-                Text(stringResource(R.string.app_name), fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                Text(stringResource(if (s.connected) R.string.mlh_connected else R.string.mlh_disconnected), color = if (s.connected) Mint else Muted, fontSize = 11.sp)
+@Composable private fun Header() {
+    Box(Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 12.dp)) {
+        Text("♧", Modifier.align(Alignment.CenterStart), color = White, fontSize = 25.sp)
+        Row(Modifier.align(Alignment.Center), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(Modifier.size(40.dp).clip(RoundedCornerShape(13.dp)).background(Brush.linearGradient(listOf(Mint, Cyan))), contentAlignment = Alignment.Center) {
+                Text("✓", color = Ink, fontSize = 23.sp, fontWeight = FontWeight.Black)
             }
-            Box(Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(Brush.linearGradient(listOf(Mint, Cyan))), contentAlignment = Alignment.Center) {
-                Text("✓", color = Ink, fontSize = 22.sp, fontWeight = FontWeight.Black)
-            }
+            Text(stringResource(R.string.app_name), fontWeight = FontWeight.Black, fontSize = 22.sp)
         }
     }
 }
 
 @Composable private fun PulseDashboard(s: Snapshot, state: MainUiState, servers: List<ServerRowUiModel>, action: (MainAction) -> Unit) = ScrollPage {
     ConnectionPulse(s) { action(MainAction.ToggleService) }
-    QualityPill(s.quality?.grade)
+    QualityPill(s.quality?.grade, ready = !s.connected && !s.connecting)
     ConnectionPreferences(state, servers, action)
     OutputIpCard(s, state, action)
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -117,23 +116,12 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
         Metric("↑", stringResource(R.string.mlh_send), s.upload, Modifier.weight(1f))
         Metric("⌁", stringResource(R.string.mlh_ping), s.ping, Modifier.weight(1f))
     }
-    GlassCard {
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
-            CircleLabel("i", Color(0xFF255F7B))
-            Column(Modifier.weight(1f)) {
-                Text("دلیل انتخاب این سرویس", fontWeight = FontWeight.Bold)
-                Text(stringResource(reasonResource(state.selectionReason)), color = Muted, fontSize = 12.sp)
-            }
-            Text("✓", color = Good, fontSize = 22.sp)
-        }
-    }
-    SmartButton(state, action)
 }
 
 @Composable private fun ConnectionPulse(s: Snapshot, click: () -> Unit) {
     val color = if (s.connected) Mint else if (s.connecting) Cyan else Color(0xFF2B6D86)
-    Box(Modifier.fillMaxWidth().height(244.dp), contentAlignment = Alignment.Center) {
-        Canvas(Modifier.size(215.dp)) {
+    Box(Modifier.fillMaxWidth().height(224.dp), contentAlignment = Alignment.Center) {
+        Canvas(Modifier.size(205.dp)) {
             drawCircle(color.copy(.08f), size.minDimension * .49f)
             drawCircle(color.copy(.18f), size.minDimension * .43f)
             drawArc(Brush.sweepGradient(listOf(color.copy(.1f), color, Cyan, color.copy(.1f))), -90f,
@@ -145,7 +133,7 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
                     Offset(center.x + kotlin.math.cos(a).toFloat() * r, center.y + kotlin.math.sin(a).toFloat() * r))
             }
         }
-        Column(Modifier.size(172.dp).clip(CircleShape).clickable(onClick = click)
+        Column(Modifier.size(164.dp).clip(CircleShape).clickable(onClick = click)
             .background(Brush.radialGradient(listOf(Color(0xFF0B5260), Color(0xFF063145), Night)))
             .border(1.dp, color.copy(.6f), CircleShape), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Text(if (s.connected) "✓" else "⏻", color = color, fontSize = 36.sp, fontWeight = FontWeight.Bold)
@@ -155,11 +143,12 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
     }
 }
 
-@Composable private fun QualityPill(grade: QualityGrade?) {
-    val c = qualityColor(grade)
+@Composable private fun QualityPill(grade: QualityGrade?, ready: Boolean = false) {
+    val c = if (ready) Mint else qualityColor(grade)
     Surface(color = c.copy(.14f), shape = RoundedCornerShape(50), border = androidx.compose.foundation.BorderStroke(1.dp, c.copy(.45f))) {
         Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("▮▮▮", color = c, fontSize = 11.sp); Text(stringResource(qualityResource(grade)), color = c, fontWeight = FontWeight.Bold)
+            Text(if (ready) "ϟ" else "▮▮▮", color = c, fontSize = 13.sp)
+            Text(if (ready) stringResource(R.string.mlh_ready) else stringResource(qualityResource(grade)), color = c, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -192,7 +181,7 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
     val countries = remember(servers) { servers.mapNotNull { row -> SmartSelectionStore.verifiedCountry(row.guid) }.distinct().sorted() }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Box(Modifier.fillMaxWidth()) {
-            PreferenceButton("◎", stringResource(R.string.mlh_exit), state.preferredCountry ?: stringResource(R.string.mlh_country_auto)) { countryMenu = true }
+            PreferenceButton("◎", stringResource(R.string.mlh_exit), state.preferredCountry?.let(::countryName) ?: stringResource(R.string.mlh_country_auto)) { countryMenu = true }
             DropdownMenu(countryMenu, { countryMenu = false }) {
                 DropdownMenuItem({ Text(stringResource(R.string.mlh_country_auto)) }, onClick = { countryMenu = false; action(MainAction.SelectCountry(null)) })
                 countries.forEach { code -> DropdownMenuItem({ Text(countryName(code)) }, onClick = { countryMenu = false; action(MainAction.SelectCountry(code)) }) }
@@ -297,14 +286,26 @@ private fun countryName(code: String): String = Locale.Builder().setRegion(code)
         values.forEachIndexed { i,v -> val x=size.width*i/values.lastIndex; val y=size.height*v; if(i==0)p.moveTo(x,y) else p.lineTo(x,y) }
         drawPath(p, qualityColor(q?.grade), style=Stroke(3.dp.toPx(), cap=StrokeCap.Round))
     }
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        QualityDetail(stringResource(R.string.mlh_median_ping), q?.medianLatencyMillis?.let { "$it ms" } ?: "—")
+        QualityDetail(stringResource(R.string.mlh_jitter), q?.jitterMillis?.let { "$it ms" } ?: "—")
+        QualityDetail(stringResource(R.string.mlh_packet_loss), q?.let { "${it.failurePercent}%" } ?: "—")
+        QualityDetail(stringResource(R.string.mlh_speed), q?.throughputBytesPerSecond?.let(::formatBitrate) ?: "—")
+    }
+}
+
+@Composable private fun QualityDetail(label: String, value: String) = Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Text(label, color = Muted, fontSize = 9.sp, maxLines = 1)
+    Text(value, fontWeight = FontWeight.Bold, fontSize = 11.sp, maxLines = 1)
 }
 
 @Composable private fun SmartButton(state: MainUiState, action: (MainAction) -> Unit) = Button(
-    { action(MainAction.TestRealAllServers) }, enabled = !state.isTesting && !state.isRunning,
+    { action(if (state.isRunning) MainAction.TestCurrentServer else MainAction.TestRealAllServers) }, enabled = !state.isTesting,
     modifier = Modifier.fillMaxWidth().height(56.dp), shape = RoundedCornerShape(19.dp),
     colors = ButtonDefaults.buttonColors(containerColor = Mint, contentColor = Ink, disabledContainerColor = Color(0xFF18535A))) {
     Text(
         if (state.isTesting) stringResource(R.string.mlh_smart_testing)
+        else if (state.isRunning) "⚡  ${stringResource(R.string.mlh_quality_test)}"
         else "⚡  ${stringResource(R.string.mlh_smart_test)}",
         fontWeight = FontWeight.Black,
         fontSize = 17.sp,
@@ -338,3 +339,4 @@ private fun reasonResource(r:String?)=when(r){"no_current_server"->R.string.mlh_
 internal fun latencyScore(ms:Long)=when{ms<=0->0;ms<=80->96;ms<=130->88;ms<=200->76;ms<=350->58;else->35}
 internal fun formatSessionTime(milliseconds:Long):String{val s=milliseconds.coerceAtLeast(0)/1000;return String.format(Locale.ROOT,"%02d:%02d:%02d",s/3600,s/60%60,s%60)}
 internal fun formatTraffic(bytes:Double):String=when{bytes>=1_073_741_824->String.format(Locale.ROOT,"%.1f GiB",bytes/1_073_741_824);bytes>=1_048_576->String.format(Locale.ROOT,"%.1f MiB",bytes/1_048_576);bytes>=1024->String.format(Locale.ROOT,"%.1f KiB",bytes/1024);else->String.format(Locale.ROOT,"%.0f B",bytes.coerceAtLeast(0.0))}
+internal fun formatBitrate(bytesPerSecond:Long):String=when{bytesPerSecond>=1_000_000->String.format(Locale.ROOT,"%.1f Mbps",bytesPerSecond*8/1_000_000.0);bytesPerSecond>=1_000->String.format(Locale.ROOT,"%.0f Kbps",bytesPerSecond*8/1_000.0);else->"${(bytesPerSecond*8).coerceAtLeast(0)} bps"}

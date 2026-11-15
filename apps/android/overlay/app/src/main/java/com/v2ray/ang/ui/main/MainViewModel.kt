@@ -118,6 +118,13 @@ class MainViewModel(
 
     private val testRequests = MainTestRequests()
     private var bulkTestJob: Job? = null
+    private data class ActiveQualityProbe(
+        val serverId: String,
+        val samples: MutableList<Long> = mutableListOf(),
+        var attempted: Int = 0,
+        var country: String? = null,
+    )
+    private var activeQualityProbe: ActiveQualityProbe? = null
 
     private val initialPageReady = CompletableDeferred<Unit>()
 
@@ -170,18 +177,34 @@ class MainViewModel(
             MainServiceEvent.StateStopSuccess -> updateRunningState(false)
             is MainServiceEvent.MeasureDelayResult -> {
                 if (!uiState.value.isRunning || !testRequests.completeCurrent(event.requestId)) return
-                uiState.value.selectedGuid?.let { guid ->
+                val probe = activeQualityProbe
+                val guid = uiState.value.selectedGuid
+                if (probe != null && guid == probe.serverId) {
+                    probe.attempted++
+                    if (event.result.delayMillis >= 0) probe.samples += event.result.delayMillis
+                    if (!event.result.country.isNullOrBlank()) probe.country = event.result.country
+                    if (probe.attempted < QUALITY_PROBE_SAMPLES && uiState.value.isRunning) {
+                        val nextRequest = testRequests.beginCurrent()
+                        dataSource.testCurrentServerRealPing(nextRequest)
+                        return
+                    }
+                    val telemetry = uiState.value.telemetry
+                    val measuredRate = telemetry?.let { maxOf(it.sendRate, it.receiveRate).toLong() } ?: 0L
                     val assessment = SmartQualityEngine.assess(ProbeEvidence(
                         serverId = guid,
-                        attempted = 1,
-                        latencyMillis = listOf(event.result.delayMillis),
-                        verifiedCountryCode = event.result.country,
+                        attempted = probe.attempted,
+                        latencyMillis = probe.samples,
+                        transferredBytes = measuredRate,
+                        transferDurationMillis = if (measuredRate > 0) 1000 else 0,
+                        verifiedCountryCode = probe.country,
                     ))
                     if (assessment.reachable) {
                         SmartSelectionStore.recordSuccessfulConnection(
                             guid, assessment.verifiedCountryCode, assessment.score,
                         )
                     }
+                    activeQualityProbe = null
+                    _uiState.update { it.copy(qualityAssessment = assessment) }
                 }
                 _uiState.update { it.copy(isTesting = testRequests.isTesting, status = MainStatus.ConnectionTest(event.result)) }
             }
@@ -209,7 +232,10 @@ class MainViewModel(
             }
 
             is MainServiceEvent.MeasureDelayCancelled -> {
-                if (testRequests.completeCurrent(event.requestId)) resetTestStatus()
+                if (testRequests.completeCurrent(event.requestId)) {
+                    activeQualityProbe = null
+                    resetTestStatus()
+                }
             }
 
             is MainServiceEvent.MeasureConfigCancelled -> {
@@ -966,6 +992,8 @@ class MainViewModel(
 
     fun testCurrentServerRealPing() {
         if (!uiState.value.isRunning) return
+        val guid = uiState.value.selectedGuid ?: return
+        activeQualityProbe = ActiveQualityProbe(guid)
         val requestId = testRequests.beginCurrent()
         _uiState.update { it.copy(isTesting = true, status = MainStatus.Testing) }
         dataSource.testCurrentServerRealPing(requestId)
@@ -1020,11 +1048,15 @@ class MainViewModel(
 
     // ---------- Running state ----------
     private fun updateRunningState(running: Boolean, clearTestingText: Boolean = true) {
-        if (!running || clearTestingText) testRequests.invalidateCurrent()
+        if (!running || clearTestingText) {
+            testRequests.invalidateCurrent()
+            activeQualityProbe = null
+        }
         _uiState.update { state ->
             state.copy(
                 connectingUntil = 0,
                 telemetry = if (running) state.telemetry else null,
+                qualityAssessment = if (state.isRunning == running) state.qualityAssessment else null,
                 isRunning = running,
                 isTesting = testRequests.isTesting,
                 status = if (!clearTestingText && state.isRunning == running) state.status
@@ -1057,5 +1089,6 @@ class MainViewModel(
 
     private companion object {
         const val TEST_RESULT_FLUSH_INTERVAL_MS = 500L
+        const val QUALITY_PROBE_SAMPLES = 3
     }
 }
