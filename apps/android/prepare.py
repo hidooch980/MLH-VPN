@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Apply the MLH branding and community-subscription overlay to an exact, clean upstream checkout.
+"""Apply the MolidoVPN AI branding and community-subscription overlay to an exact, clean upstream checkout.
 
 WireGuard import compatibility is patched; transport, routing and VPN service stay upstream.
 The generated Android application retains upstream's GPL-3.0 license.
@@ -57,8 +57,8 @@ def prepare(root: Path) -> None:
     changes[gradle] = content
 
     for flavor, old_name, new_name in [
-        ('main', 'v2rayNG', 'MLH VPN'),
-        ('fdroid', 'v2rayNG (F-Droid)', 'MLH VPN'),
+        ('main', 'v2rayNG', 'MolidoVPN AI'),
+        ('fdroid', 'v2rayNG (F-Droid)', 'MolidoVPN AI'),
     ]:
         path = project / f'app/src/{flavor}/res/values/strings.xml'
         changes[path] = replace_once(path.read_text(), f'>{old_name}</string>', f'>{new_name}</string>')
@@ -97,7 +97,7 @@ def prepare(root: Path) -> None:
             raise ValueError(f'Missing WARP menu resource in {locale}')
         # Keep upstream attribution in licenses, while removing upstream product
         # branding from every user-visible locale.
-        content = content.replace('v2rayNG', 'MLH VPN')
+        content = content.replace('v2rayNG', 'MolidoVPN AI').replace('MLH VPN', 'MolidoVPN AI')
         changes[path] = content
 
     path = project / 'app/src/main/java/com/v2ray/ang/util/HttpUtil.kt'
@@ -107,7 +107,7 @@ def prepare(root: Path) -> None:
     path = project / 'app/src/main/java/com/v2ray/ang/ui/logcat/LogcatActivity.kt'
     changes[path] = replace_once(path.read_text(),
         '"v2rayNG_logcat_$timestamp.txt"',
-        '"MLHVPN_logcat_$timestamp.txt"')
+        '"MolidoVPNAI_logcat_$timestamp.txt"')
 
     # Provider-exported WireGuard files can begin with comments (e.g. Proton).
     path = project / 'app/src/main/java/com/v2ray/ang/handler/AngConfigManager.kt'
@@ -175,7 +175,7 @@ def prepare(root: Path) -> None:
     assets.mkdir(parents=True, exist_ok=True)
     (assets / 'mlh_upstream_license.txt').write_text((root / 'LICENSE').read_text())
     (assets / 'mlh_build.json').write_text(json.dumps(LOCK, indent=2) + '\n')
-    print(f'Prepared MLH VPN {LOCK["application_version"]} from v2rayNG {LOCK["version"]}')
+    print(f'Prepared MolidoVPN AI {LOCK["application_version"]} from v2rayNG {LOCK["version"]}')
 
 
 def download_core(root: Path) -> None:
@@ -206,9 +206,9 @@ def notices(root: Path) -> None:
     marker = '<!-- MLH VPN notices -->'
     if marker in current:
         return
-    notice = (marker + '<section><h2>MLH VPN / v2rayNG</h2>'
+    notice = (marker + '<section><h2>MolidoVPN AI / v2rayNG</h2>'
               '<p>MLH VPN is a modified build of v2rayNG, copyright its contributors. '
-              'Branding/build modifications: MLH VPN contributors, 2026-11-13. '
+              'Branding/build modifications: MolidoVPN AI contributors, 2026-11-15. '
               'Distributed under GNU GPL version 3, WITHOUT ANY WARRANTY. '
               'You may modify and redistribute it under that license.</p>'
               f'<p>Corresponding source and build scripts: {html.escape(REPOSITORY)}. '
