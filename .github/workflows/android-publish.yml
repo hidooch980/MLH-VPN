@@ -28,7 +28,7 @@ jobs:
           assert re.fullmatch('[a-f0-9]{40}', m['source_sha'])
           run = json.loads(subprocess.check_output(['gh', 'api', f'repos/{os.environ["GITHUB_REPOSITORY"]}/actions/runs/{m["run_id"]}']))
           assert run['head_sha'] == m['source_sha'] and run['conclusion'] == 'success'
-          assert run['name'] == 'Android release candidate' and run['head_branch'] == 'codex/smart-dashboard-beta2'
+          assert run['name'] == 'Android release candidate' and run['head_branch'] == 'codex/publish-dashboard-beta2'
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
               out.write(f'run={m["run_id"]}\nsource={m["source_sha"]}\n')
           PY
