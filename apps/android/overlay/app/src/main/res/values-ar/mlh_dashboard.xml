@@ -95,4 +95,5 @@
     <string name="mlh_app_update">تحديث التطبيق</string>
     <string name="mlh_app_update_hint">تحقق من إصدار جديد وثبّته بعد موافقتك</string>
     <string name="mlh_about">حول التطبيق</string>
+    <string name="mlh_quality_history_unavailable">لم يُسجَّل سجل الاتجاه بعد؛ تعكس هذه الدرجة آخر تقييم فقط.</string>
 </resources>
