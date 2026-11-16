@@ -117,3 +117,12 @@
 - Commit `d9973366fe251794654b0d481853c510af3f8c16`: changing AUTO/FAST/STABLE/COMPATIBLE while a tunnel is running now stores the preference for the next session and does not change the selected profile underneath the active tunnel. This prevents the UI's selected profile from diverging from the endpoint actually carrying traffic.
 - Android workflow run: [43924969206](https://github.com/hidooch980/MLH-VPN/actions/runs/43924969206), HEAD `d9973366fe251794654b0d481853c510af3f8c16`; queued/pending at log time. No build result claimed.
 - The preceding workflow [43923994731](https://github.com/hidooch980/MLH-VPN/actions/runs/43923994731) was still running its Gradle build; it is not evidence of a completed build for the later HEAD.
+
+
+## 2026-11-16 — Adapter error contract and protocol UI evidence correction
+- Commit `928234b0ee926a4398df6f7a71eb2fc376726a7a`: Xray adapter now normalizes START/STOP/STATUS failures into `EngineAdapterException` with stable engine ID and operation. Exception message excludes config, endpoint and credential contents; original exception remains available as cause for controlled diagnostics.
+- Commit `71bb7bf0c5f048b0c20673ac8856e77e686348a3`: added unit test proving failure metadata is stable and exception message does not expose secret-like cause text.
+- Commit `75a23ad0d92f36903a8ec4eccd31e8626f419191`: protocol dashboard now labels an item as verified only when `deviceVerified == true`; source documentation alone is shown as needing review until physical-device acceptance exists.
+- Latest CI run: [43925761547](https://github.com/hidooch980/MLH-VPN/actions/runs/43925761547), HEAD `71bb7bf0c5f048b0c20673ac8856e77e686348a3`; queued when recorded. No Build/test result claimed yet.
+- Prior run [43924969206](https://github.com/hidooch980/MLH-VPN/actions/runs/43924969206) targets an earlier SHA and remains in progress; it cannot validate these later commits.
+- Still not verified: physical-device tunnel operation for each protocol; IPv4/IPv6 and DNS leak behavior; Kill Switch; Wi-Fi/mobile handover; signing-key recovery and upgrade continuity.
