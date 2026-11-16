@@ -1,6 +1,5 @@
 package com.v2ray.ang.handler
 
-import android.app.Activity
 import android.app.DownloadManager
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -45,10 +44,13 @@ object UpdateInstaller {
 
     fun startDownload(context: Context, rawUrl: String) {
         val uri = Uri.parse(rawUrl)
-        require(uri.scheme == "https" && uri.host == "github.com" &&
+        val segments = uri.pathSegments
+        require(uri.scheme == "https" && uri.host == "github.com" && uri.port == -1 &&
             uri.userInfo == null && uri.query == null && uri.fragment == null &&
-            uri.path.orEmpty().startsWith("/hidooch980/MLH-VPN/releases/download/") &&
-            uri.lastPathSegment.orEmpty().matches(Regex("MLHVPN_[0-9A-Za-z.-]+-fdroid_(arm64-v8a|armeabi-v7a|x86|x86_64|universal)\\.apk"))) {
+            segments.size == 6 && segments[0] == "hidooch980" &&
+            segments[1] == "MLH-VPN" && segments[2] == "releases" &&
+            segments[3] == "download" && segments[4].matches(Regex("v[0-9A-Za-z.-]+")) &&
+            segments[5].matches(Regex("MLHVPN_[0-9A-Za-z.-]+-fdroid_(arm64-v8a|armeabi-v7a|x86|x86_64|universal)\\.apk"))) {
             "Untrusted update URL"
         }
 
@@ -80,14 +82,38 @@ object UpdateInstaller {
             val status = it.getInt(it.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
             if (status != DownloadManager.STATUS_SUCCESSFUL) {
                 prefs.edit().remove(KEY_DOWNLOAD_ID).apply()
-                Toast.makeText(activity, "دانلود به‌روزرسانی ناموفق بود", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "دانلود به‌روزرسانی ناموفق بود", Toast.LENGTH_LONG).show()
                 return
             }
         }
         val apkUri = manager.getUriForDownloadedFile(id) ?: return
         prefs.edit().putString(KEY_PENDING_URI, apkUri.toString())
             .remove(KEY_DOWNLOAD_ID).apply()
-        openPendingInstall(activity)
+        if (launchInstaller) openPendingInstall(context)
+    }
+
+    /**
+     * DownloadManager continues after the app process is killed. Reconcile its
+     * persisted download ID on the next foreground, rather than losing the
+     * completion broadcast when no Activity receiver was registered.
+     */
+    fun resumePendingDownload(context: Context) {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val id = prefs.getLong(KEY_DOWNLOAD_ID, -1L)
+        if (id < 0L) return
+        val manager = context.getSystemService(DownloadManager::class.java) ?: return
+        val cursor = manager.query(DownloadManager.Query().setFilterById(id)) ?: return
+        val status = cursor.use {
+            if (!it.moveToFirst()) return
+            it.getInt(it.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
+        }
+        when (status) {
+            DownloadManager.STATUS_SUCCESSFUL -> onDownloadComplete(context, id, launchInstaller = false)
+            DownloadManager.STATUS_FAILED -> {
+                prefs.edit().remove(KEY_DOWNLOAD_ID).apply()
+                Toast.makeText(context, "دانلود به‌روزرسانی ناموفق بود", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     /** Called when the app returns from Android's unknown-app install permission screen. */
