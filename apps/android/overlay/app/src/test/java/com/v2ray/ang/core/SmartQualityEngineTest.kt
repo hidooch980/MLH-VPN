@@ -32,6 +32,25 @@ class SmartQualityEngineTest {
         assertEquals("current", decision.selected?.serverId)
     }
 
+    @Test fun `invalid latency samples count as failed probes and do not poison scoring`() {
+        val result = SmartQualityEngine.assess(ProbeEvidence(
+            serverId = "sanitized", attempted = 3,
+            latencyMillis = listOf(-1, 45, 999_999),
+            verifiedCountryCode = "not-a-country",
+        ))
+        assertEquals(45, result.medianLatencyMillis)
+        assertEquals(66, result.failurePercent)
+        assertNull(result.verifiedCountryCode)
+    }
+
+    @Test fun `throughput calculation saturates instead of overflowing`() {
+        val result = SmartQualityEngine.assess(ProbeEvidence(
+            serverId = "large", attempted = 1, latencyMillis = listOf(20),
+            transferredBytes = Long.MAX_VALUE, transferDurationMillis = 1,
+        ))
+        assertEquals(Long.MAX_VALUE, result.throughputBytesPerSecond)
+    }
+
     @Test fun `unhealthy connection switches to best reachable candidate`() {
         val current = SmartQualityEngine.assess(ProbeEvidence("current", 3, emptyList(), consecutiveFailures = 3))
         val candidate = SmartQualityEngine.assess(ProbeEvidence("candidate", 3, listOf(60, 65, 70)))
