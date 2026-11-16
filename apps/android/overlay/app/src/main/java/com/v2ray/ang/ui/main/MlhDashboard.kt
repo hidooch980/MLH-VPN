@@ -359,7 +359,7 @@ private fun countryName(code: String): String = Locale.Builder().setRegion(code)
     }
     QualityChart(s.quality)
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        ControlTile("⌁", stringResource(R.string.mlh_network_status), if (s.connected) "متصل" else "قطع", s.ping, Modifier.weight(1f))
+        ControlTile("⌁", stringResource(R.string.mlh_network_status), stringResource(if (s.connected) R.string.mlh_connected else R.string.mlh_disconnected), s.ping, Modifier.weight(1f))
         ControlTile("⬡", stringResource(R.string.mlh_dns_route), stringResource(R.string.mlh_test_required), stringResource(R.string.mlh_leak_test_required), Modifier.weight(1f))
     }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
