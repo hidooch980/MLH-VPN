@@ -5,6 +5,7 @@ import com.v2ray.ang.dto.GitHubRelease
 /** APK selection is separate from networking so device fallbacks can be tested. */
 internal object ReleaseAssetSelector {
     private val versionPattern = Regex("^(\\d+)\\.(\\d+)\\.(\\d+)(?:-([0-9A-Za-z.-]+))?$")
+    internal val apkFilenamePattern = Regex("^MLHVPN_[0-9A-Za-z.-]+-fdroid_(arm64-v8a|armeabi-v7a|x86|x86_64|universal)\\.apk$")
 
     fun shouldCheck(now: Long, last: Long): Boolean = last <= 0 || now < last || now - last >= 86_400_000L
 
