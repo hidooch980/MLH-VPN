@@ -79,3 +79,12 @@
 - SHA مورد آزمایش: `82298004e58719dd100090982dd40bea27f162c0`
 - آخرین مشاهده هنگام ثبت این یادداشت: build job در حال اجرای Gradle build/tests؛ نتیجه نهایی هنوز دریافت نشده است.
 - این تغییر تا موفقیت CI و بازبینی تست‌ها «تکمیل‌شده» محسوب نمی‌شود.
+
+
+## 2026-11-16 — Smart selection CI and finalization gate review
+- Android source commit tested: `82298004e58719dd100090982dd40bea27f162c0`.
+- Workflow run `43920252812`: build and Android emulator smoke jobs both completed successfully.
+- Preview artifact `MLHVPN-Android-preview` ID `14254117139`; SHA-256 `48c6639ca0aafbf3140070a9ef688d1d29a9bf127414e74d2b96743a9e0f9d1d`.
+- Source review found that smart orchestration selects a profile but does not own the actual tunnel lifecycle; candidate latency freshness is not established at the call site.
+- A shared multi-engine adapter, per-engine runtime verification, full license/SBOM clearance, multilingual resources, physical-device leak/kill-switch tests, and production signing continuity remain open.
+- Status: preview CI green; production release and physical VPN acceptance remain blocked. No merge to main.
