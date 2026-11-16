@@ -379,6 +379,12 @@ class MainViewModel(
     private fun selectConnectionMode(mode: ConnectionMode) {
         SmartSelectionStore.setConnectionMode(mode.name)
         _uiState.update { it.copy(connectionMode = mode) }
+
+        // A mode change while the tunnel is active is a preference for the next session.
+        // Do not change the selected profile underneath a running core: that would make the
+        // UI selection diverge from the endpoint actually carrying traffic.
+        if (uiState.value.isRunning) return
+
         val decision = SmartEngineOrchestrator.select(
             candidates = buildSmartEngineCandidates(),
             currentServerId = uiState.value.selectedGuid,
