@@ -174,25 +174,42 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
 
 @Composable private fun ConnectionPulse(s: Snapshot, click: () -> Unit) {
     val color = if (s.connected) Mint else if (s.connecting) Cyan else Color(0xFF2B6D86)
-    Box(Modifier.fillMaxWidth().height(224.dp), contentAlignment = Alignment.Center) {
-        Canvas(Modifier.size(205.dp)) {
-            drawCircle(color.copy(.08f), size.minDimension * .49f)
-            drawCircle(color.copy(.18f), size.minDimension * .43f)
-            drawArc(Brush.sweepGradient(listOf(color.copy(.1f), color, Cyan, color.copy(.1f))), -90f,
-                if (s.connected) 330f else 250f, false, Offset(12.dp.toPx(), 12.dp.toPx()),
-                Size(size.width - 24.dp.toPx(), size.height - 24.dp.toPx()), style = Stroke(8.dp.toPx(), cap = StrokeCap.Round))
-            repeat(30) { i ->
-                val a = Math.toRadians(i * 12.0 - 90); val r = size.minDimension * .49f
-                drawCircle(color.copy(if (i % 3 == 0) .75f else .28f), 1.5.dp.toPx(),
-                    Offset(center.x + kotlin.math.cos(a).toFloat() * r, center.y + kotlin.math.sin(a).toFloat() * r))
+    Row(
+        Modifier.fillMaxWidth().height(196.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(Modifier.size(174.dp), contentAlignment = Alignment.Center) {
+            Canvas(Modifier.fillMaxSize()) {
+                drawCircle(color.copy(.08f), size.minDimension * .49f)
+                drawCircle(color.copy(.18f), size.minDimension * .43f)
+                drawArc(Brush.sweepGradient(listOf(color.copy(.1f), color, Cyan, color.copy(.1f))), -90f,
+                    if (s.connected) 330f else 250f, false, Offset(10.dp.toPx(), 10.dp.toPx()),
+                    Size(size.width - 20.dp.toPx(), size.height - 20.dp.toPx()), style = Stroke(7.dp.toPx(), cap = StrokeCap.Round))
+                repeat(30) { i ->
+                    val a = Math.toRadians(i * 12.0 - 90); val r = size.minDimension * .49f
+                    drawCircle(color.copy(if (i % 3 == 0) .75f else .28f), 1.4.dp.toPx(),
+                        Offset(center.x + kotlin.math.cos(a).toFloat() * r, center.y + kotlin.math.sin(a).toFloat() * r))
+                }
+            }
+            Column(Modifier.size(136.dp).clip(CircleShape).clickable(onClick = click)
+                .background(Brush.radialGradient(listOf(Color(0xFF0B5260), Color(0xFF063145), Night)))
+                .border(1.dp, color.copy(.6f), CircleShape), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                Text(if (s.connected) "✓" else "⏻", color = color, fontSize = 31.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(if (s.connecting) R.string.mlh_connecting else if (s.connected) R.string.mlh_connected else R.string.mlh_connect), fontSize = 19.sp, fontWeight = FontWeight.Black)
+                Text(s.elapsed, color = Muted, fontSize = 14.sp)
             }
         }
-        Column(Modifier.size(164.dp).clip(CircleShape).clickable(onClick = click)
-            .background(Brush.radialGradient(listOf(Color(0xFF0B5260), Color(0xFF063145), Night)))
-            .border(1.dp, color.copy(.6f), CircleShape), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Text(if (s.connected) "✓" else "⏻", color = color, fontSize = 36.sp, fontWeight = FontWeight.Bold)
-            Text(stringResource(if (s.connecting) R.string.mlh_connecting else if (s.connected) R.string.mlh_connected else R.string.mlh_connect), fontSize = 24.sp, fontWeight = FontWeight.Black)
-            Text(s.elapsed, color = Muted, fontSize = 17.sp)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+            Text(stringResource(R.string.mlh_exit), color = Muted, fontSize = 11.sp)
+            Text(s.country, color = White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 2)
+            Text(stringResource(R.string.mlh_exit_ip), color = Muted, fontSize = 10.sp)
+            Text(s.ip, color = Mint, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 2)
+            Text(
+                stringResource(if (s.connected) R.string.mlh_status_active else R.string.mlh_status_not_checked),
+                color = if (s.connected) Mint else Muted,
+                fontSize = 10.sp,
+            )
         }
     }
 }
