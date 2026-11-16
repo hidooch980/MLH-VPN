@@ -23,6 +23,7 @@ object UpdateInstaller {
     private const val PREFS = "molidovpn_update"
     private const val KEY_DOWNLOAD_ID = "download_id"
     private const val KEY_PENDING_URI = "pending_uri"
+    private const val KEY_SETTINGS_OPENED = "settings_opened"
     private const val APK_MIME = "application/vnd.android.package-archive"
 
     fun register(activity: Activity): BroadcastReceiver {
@@ -96,6 +97,12 @@ object UpdateInstaller {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
             !context.packageManager.canRequestPackageInstalls()
         ) {
+            if (prefs.getBoolean(KEY_SETTINGS_OPENED, false)) {
+                prefs.edit().remove(KEY_SETTINGS_OPENED).apply()
+                Toast.makeText(context, "برای نصب، اجازهٔ نصب از این برنامه را فعال کن", Toast.LENGTH_LONG).show()
+                return
+            }
+            prefs.edit().putBoolean(KEY_SETTINGS_OPENED, true).apply()
             val settings = Intent(
                 Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
                 Uri.parse("package:${context.packageName}")
@@ -103,6 +110,7 @@ object UpdateInstaller {
             context.startActivity(settings)
             return
         }
+        prefs.edit().remove(KEY_SETTINGS_OPENED).apply()
         val install = Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(Uri.parse(rawUri), APK_MIME)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
