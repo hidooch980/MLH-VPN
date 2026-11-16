@@ -49,6 +49,7 @@ class MainActivity : HelperBaseComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        UpdateInstaller.resumePendingDownload(this)
         UpdateInstaller.openPendingInstall(this)
     }
 
