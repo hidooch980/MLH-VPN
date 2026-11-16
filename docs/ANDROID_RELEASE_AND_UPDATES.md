@@ -12,7 +12,15 @@ The release workflow downloads that exact artifact and decrypts it using the ori
 
 - `MLHVPN_BACKUP_PRIVATE_KEY_PEM_B64`: base64-encoded contents of the original `backup-private.pem` that corresponds to `apps/android/signing-backup-public.pem`.
 
-Do not use signing secrets from another repository or generate a replacement key. In particular, the four `ANDROID_*` secrets documented in the separate `molido-robo` project are not configured in this VPN repository and may represent a different Android application identity.
+Do not use signing secrets from another repository or generate a replacement key. In particular, the four `ANDROID_*` secrets documented in the separate `molido-robo` project belong to a different Android application and are not the MLH VPN recovery key.
+
+If the owner has the recovery file on a trusted Linux machine, encode it locally without printing its contents into chat:
+
+```sh
+base64 -w0 /secure/path/backup-private.pem > /secure/path/backup-private.pem.b64
+```
+
+Copy the encoded value directly into the GitHub Actions secret `MLHVPN_BACKUP_PRIVATE_KEY_PEM_B64`; delete the temporary `.b64` file securely afterward. Do not commit either file.
 
 After decrypting the CMS backup, the workflow extracts `signing-key.pk8` and `signing-cert.pem` into an isolated runner directory, checks the recovered certificate SHA-256 fingerprint against the published 1.1.0 identity (`3C8849FC59084133E7B09402EE1665563F5329CE3602380A7E05FAEE8D4E7D7D`), signs all three APKs, verifies signatures and package/version metadata, then runs an Android emulator upgrade smoke test from the published 1.1.0 Universal APK before publishing v1.2.0. Private material is removed when the signing step exits and is never uploaded or committed.
 
