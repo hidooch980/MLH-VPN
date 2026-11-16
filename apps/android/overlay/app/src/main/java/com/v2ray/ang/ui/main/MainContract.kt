@@ -3,6 +3,7 @@ package com.v2ray.ang.ui.main
 import com.v2ray.ang.dto.ConnectionTestResult
 import com.v2ray.ang.dto.GroupMapItem
 import com.v2ray.ang.dto.LocateTarget
+import com.v2ray.ang.core.QualityHistorySample
 
 /** Locale-neutral state formatted only when it reaches the main UI. */
 sealed interface MainStatus {
@@ -32,6 +33,7 @@ data class MainUiState(
     val preferredCountry: String? = null,
     val connectionMode: ConnectionMode = ConnectionMode.AUTO,
     val qualityAssessment: com.v2ray.ang.core.QualityAssessment? = null,
+    val qualityHistory: List<QualityHistorySample> = emptyList(),
 )
 
 enum class ConnectionMode { AUTO, FAST, STABLE, COMPATIBLE }
