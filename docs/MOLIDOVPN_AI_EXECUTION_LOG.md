@@ -25,7 +25,7 @@
 - [x] بررسی هویت MolidoVPN AI و native engines بسته‌بندی‌شده: موفق.
 - [x] ساخت source bundle و checksum: موفق.
 - [x] بارگذاری artifact: موفق.
-- [ ] تست Android emulator: در زمان ثبت این گزارش هنوز در حال اجرا بود؛ تا دریافت نتیجه نهایی Done نیست.
+- [x] تست Android emulator: موفق؛ نصب APK، نصب instrumentation test APK و اجرای تست startup؛ نتیجه `OK (1 test)`.
 - [ ] تست تونل واقعی روی گوشی ARM64 با endpoint و کانفیگ معتبر: انجام نشده.
 - [ ] تأیید نشت DNS/IPv4/IPv6 و تغییر شبکه روی دستگاه واقعی: انجام نشده.
 
@@ -33,6 +33,9 @@
 - نام: `MLHVPN-Android-preview`
 - Artifact ID: `14249773850`
 - حجم: 255,107,862 bytes
+- Unit tests: `170 tests, 0 failures, 0 skipped` (Gradle HTML report).
+- Emulator instrumentation: `OK (1 test)`.
+- APK ARM64 استخراج و checksum آن با `SHA256SUMS` داخل artifact تأیید شد.
 - محتوا شامل APKهای ARM64، ARM32، x86، x86_64، Universal، Android test APK، source bundle و SHA256SUMS است.
 - این APKها preview/debug هستند، نه release امضاشده برای انتشار عمومی.
 - SHA-256 فایل ZIP دریافت‌شده: `6d438b3129e797d244d5c80a62b40a680e3e61a2893ce552ac7753dda266e43c`
@@ -48,3 +51,12 @@
 - گرفتن نتیجه نهایی emulator smoke و بررسی instrumentation artifact.
 - سپس فاز 0: ممیزی معماری و native engine inventory؛ ثبت موارد واقعی و شکاف‌ها.
 - بعد از آن اتصال orchestrator به مسیر واقعی server selection با تست regression.
+
+
+### تکمیل اجرای CI
+- Workflow run `43916712315` نهایی شد: `success`.
+- Build job: `success`; Android smoke job: `success`.
+- Gradle unit test report: 170 تست، صفر شکست، صفر skipped.
+- Emulator instrumentation: `OK (1 test)`.
+- Preview ARM64 APK در مسیر artifact موجود است؛ checksum داخلی artifact تأیید شد.
+- این نتایج فقط روی commit کد `876d4ecb550d58a8c1d58ee7e61ae0efd3ff6e83` معتبرند؛ آخرین commit فعلی شاخه شامل مستندات نقشه راه و دفتر اجراست و هنوز workflow مجزا برای همان HEAD اجرا نشده است.
