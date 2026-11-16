@@ -12,6 +12,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,6 +31,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.v2ray.ang.R
 import com.v2ray.ang.core.*
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 private val Ink = Color(0xFF041525)
 private val Night = Color(0xFF06192C)
@@ -54,6 +56,8 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
     val now by mainViewModel.clock.collectAsStateWithLifecycle()
     val group by mainViewModel.serverGroupState(state.selectedGroupId).collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableStateOf(DashboardTab.HOME) }
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
     val unavailable = stringResource(R.string.mlh_unavailable)
     val result = (state.status as? MainStatus.ConnectionTest)?.result?.takeIf { state.isRunning && it.delayMillis >= 0 }
     val quality = state.qualityAssessment ?: result?.let {
@@ -75,14 +79,41 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
         traffic?.received?.let { formatTraffic(it.toDouble()) } ?: unavailable,
     )
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-        Scaffold(containerColor = Ink, contentColor = White, bottomBar = {
-            BottomNav(tab) { selected ->
-                tab = selected
-            }
-        }) { padding ->
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            scrimColor = Ink.copy(alpha = .72f),
+            drawerContent = {
+                NavigationDrawerSheet(drawerContainerColor = Night, drawerContentColor = White) {
+                    Text("MolidoVPN AI", Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 24.dp), fontSize = 22.sp, fontWeight = FontWeight.Black)
+                    listOf(
+                        Triple(DashboardTab.HOME, "⌂", "داشبورد هوشمند"),
+                        Triple(DashboardTab.COUNTRIES, "◎", "کشورها و سرورها"),
+                        Triple(DashboardTab.AI, "✧", "مغز هوش مصنوعی"),
+                        Triple(DashboardTab.PROTOCOLS, "◇", "پروتکل‌ها"),
+                        Triple(DashboardTab.MORE, "☰", "تنظیمات و بیشتر"),
+                    ).forEach { (destination, glyph, label) ->
+                        NavigationDrawerItem(
+                            label = { Text(label, fontWeight = if (tab == destination) FontWeight.Bold else FontWeight.Normal) },
+                            selected = tab == destination,
+                            onClick = { tab = destination; scope.launch { drawerState.close() } },
+                            icon = { Text(glyph, color = if (tab == destination) Cyan else Muted, fontSize = 20.sp) },
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 3.dp),
+                            colors = NavigationDrawerItemDefaults.colors(
+                                selectedContainerColor = Color(0xFF104B58),
+                                selectedTextColor = Mint,
+                                unselectedTextColor = Muted,
+                            ),
+                        )
+                    }
+                    Spacer(Modifier.height(18.dp))
+                    Text("نسخه Premium • طراحی محلی و حریم خصوصی‌محور", Modifier.padding(horizontal = 22.dp), color = Muted, fontSize = 10.sp)
+                }
+            },
+        ) {
+        Scaffold(containerColor = Ink, contentColor = White) { padding ->
             Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)
                 .background(Brush.verticalGradient(listOf(Ink, Night)))) {
-                Header()
+                Header { scope.launch { drawerState.open() } }
                 when (tab) {
                     DashboardTab.HOME -> PulseDashboard(snap, state, group.rows, onAction)
                     DashboardTab.COUNTRIES -> CountryDashboard(snap, state, group.rows, onAction)
@@ -91,6 +122,7 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
                     DashboardTab.MORE -> MlhSettingsDashboard(onAction, onNavigate)
                 }
             }
+        }
         }
     }
 }
@@ -114,9 +146,9 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
     }
 }
 
-@Composable private fun Header() {
+@Composable private fun Header(onMenu: () -> Unit) {
     Box(Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 12.dp)) {
-        Text("♧", Modifier.align(Alignment.CenterStart), color = White, fontSize = 25.sp)
+        Box(Modifier.align(Alignment.CenterStart).size(42.dp).clip(CircleShape).background(Panel).border(1.dp, Cyan.copy(.55f), CircleShape).clickable(onClick = onMenu), contentAlignment = Alignment.Center) { Text("☰", color = Mint, fontSize = 20.sp) }
         Row(Modifier.align(Alignment.Center), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Box(Modifier.size(40.dp).clip(RoundedCornerShape(13.dp)).background(Brush.linearGradient(listOf(Mint, Cyan))), contentAlignment = Alignment.Center) {
                 Text("✓", color = Ink, fontSize = 23.sp, fontWeight = FontWeight.Black)
@@ -129,7 +161,7 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
 @Composable private fun PulseDashboard(s: Snapshot, state: MainUiState, servers: List<ServerRowUiModel>, action: (MainAction) -> Unit) = ScrollPage {
     ConnectionPulse(s) { action(MainAction.ToggleService) }
     QualityPill(s.quality?.grade, ready = !s.connected && !s.connecting)
-    ConnectionPreferences(state, servers, action)
+    ConnectionPreferences(s, state, servers, action)
     OutputIpCard(s, state, action)
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Metric("↓", stringResource(R.string.mlh_receive), s.download, Modifier.weight(1f))
@@ -195,13 +227,13 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
     }
 }
 
-@Composable private fun ConnectionPreferences(state: MainUiState, servers: List<ServerRowUiModel>, action: (MainAction) -> Unit) {
+@Composable private fun ConnectionPreferences(s: Snapshot, state: MainUiState, servers: List<ServerRowUiModel>, action: (MainAction) -> Unit) {
     var countryMenu by rememberSaveable { mutableStateOf(false) }
     var modeMenu by rememberSaveable { mutableStateOf(false) }
     val countries = remember(servers) { servers.mapNotNull { row -> SmartSelectionStore.verifiedCountry(row.guid) }.distinct().sorted() }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Box(Modifier.fillMaxWidth()) {
-            PreferenceButton("◎", stringResource(R.string.mlh_exit), state.preferredCountry?.let(::countryName) ?: stringResource(R.string.mlh_country_auto)) { countryMenu = true }
+            PreferenceButton("✦", stringResource(R.string.mlh_exit), state.preferredCountry?.let(::countryName) ?: stringResource(R.string.mlh_country_auto), detail = "${s.country}  •  ${s.ip}") { countryMenu = true }
             DropdownMenu(countryMenu, { countryMenu = false }) {
                 DropdownMenuItem({ Text(stringResource(R.string.mlh_country_auto)) }, onClick = { countryMenu = false; action(MainAction.SelectCountry(null)) })
                 countries.forEach { code -> DropdownMenuItem({ Text(countryName(code)) }, onClick = { countryMenu = false; action(MainAction.SelectCountry(code)) }) }
@@ -220,8 +252,16 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
     }
 }
 
-@Composable private fun PreferenceButton(icon: String, title: String, value: String, click: () -> Unit) = Surface(Modifier.fillMaxWidth().clickable(onClick = click), color = Panel, shape = RoundedCornerShape(18.dp), border = androidx.compose.foundation.BorderStroke(1.dp, White.copy(.08f))) {
-    Row(Modifier.padding(13.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) { Text(icon, color = Cyan, fontSize = 20.sp); Column(Modifier.weight(1f)) { Text(title, color = Muted, fontSize = 10.sp); Text(value, fontWeight = FontWeight.Bold, fontSize = 12.sp, maxLines = 1) }; Text("⌄", color = Muted) }
+@Composable private fun PreferenceButton(icon: String, title: String, value: String, detail: String? = null, click: () -> Unit) = Surface(Modifier.fillMaxWidth().clickable(onClick = click), color = Panel, shape = RoundedCornerShape(18.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Cyan.copy(.22f))) {
+    Row(Modifier.padding(13.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Box(Modifier.size(42.dp).clip(CircleShape).background(Brush.radialGradient(listOf(Mint.copy(.34f), Cyan.copy(.10f)))).border(1.dp, Mint.copy(.7f), CircleShape), contentAlignment = Alignment.Center) { Text(icon, color = Mint, fontSize = 21.sp, fontWeight = FontWeight.Bold) }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, color = Muted, fontSize = 10.sp)
+            Text(value, fontWeight = FontWeight.Bold, fontSize = 12.sp, maxLines = 1)
+            if (detail != null) Text(detail, color = Muted, fontSize = 10.sp, maxLines = 1)
+        }
+        Text("⌄", color = Muted)
+    }
 }
 
 private fun countryName(code: String): String = Locale.Builder().setRegion(code).build().getDisplayCountry(Locale.getDefault()).ifBlank { code }
