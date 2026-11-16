@@ -31,6 +31,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.v2ray.ang.R
 import com.v2ray.ang.core.*
 import java.util.Locale
+import java.util.Date
+import java.text.DateFormat
 import kotlinx.coroutines.launch
 
 private val Ink = Color(0xFF041525)
@@ -374,7 +376,7 @@ private fun countryName(code: String): String = Locale.Builder().setRegion(code)
             Box(Modifier.size(56.dp).clip(CircleShape).background(Mint.copy(.16f)).border(2.dp, Mint, CircleShape).clickable { action(MainAction.ToggleService) }, contentAlignment = Alignment.Center) { Text("⏻", color = Mint, fontSize = 29.sp) }
         }
     }
-    QualityChart(s.quality)
+    QualityChart(s.quality, state.qualityHistory)
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         ControlTile("⌁", stringResource(R.string.mlh_network_status), stringResource(if (s.connected) R.string.mlh_connected else R.string.mlh_disconnected), s.ping, Modifier.weight(1f))
         ControlTile("⬡", stringResource(R.string.mlh_dns_route), stringResource(R.string.mlh_test_required), stringResource(R.string.mlh_leak_test_required), Modifier.weight(1f))
@@ -390,17 +392,25 @@ private fun countryName(code: String): String = Locale.Builder().setRegion(code)
     OutlinedButton({ action(MainAction.OpenVpnSecuritySettings) }, Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Cyan.copy(.55f)), colors = ButtonDefaults.outlinedButtonColors(contentColor = Cyan)) { Text(stringResource(R.string.mlh_security_settings)) }
 }
 
-@Composable private fun QualityChart(q: QualityAssessment?) = GlassCard {
+@Composable private fun QualityChart(q: QualityAssessment?, history: List<QualityHistorySample>) = GlassCard {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Column { Text(stringResource(R.string.mlh_quality_title), fontWeight = FontWeight.Bold, fontSize = 18.sp); Text(stringResource(qualityResource(q?.grade)), color = qualityColor(q?.grade)) }
         Text(q?.score?.toString() ?: "—", color = qualityColor(q?.grade), fontSize = 36.sp, fontWeight = FontWeight.Black)
     }
-    Text(
-        stringResource(R.string.mlh_quality_history_unavailable),
-        Modifier.fillMaxWidth(),
-        color = Muted,
-        fontSize = 11.sp,
-    )
+    Text(stringResource(R.string.mlh_quality_history_title), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    if (history.isEmpty()) {
+        Text(stringResource(R.string.mlh_quality_history_empty), color = Muted, fontSize = 11.sp)
+    } else {
+        history.takeLast(5).asReversed().forEach { sample ->
+            val time = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(sample.timestampMillis))
+            val latency = sample.medianLatencyMillis?.let { "$it ms" } ?: "—"
+            val speed = sample.throughputBytesPerSecond?.let(::formatBitrate) ?: "—"
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(time, color = Muted, fontSize = 10.sp)
+                Text("${sample.score}/100 • $latency • $speed", color = White, fontSize = 10.sp, fontWeight = FontWeight.Medium)
+            }
+        }
+    }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         QualityDetail(stringResource(R.string.mlh_median_ping), q?.medianLatencyMillis?.let { "$it ms" } ?: "—")
         QualityDetail(stringResource(R.string.mlh_jitter), q?.jitterMillis?.let { "$it ms" } ?: "—")
