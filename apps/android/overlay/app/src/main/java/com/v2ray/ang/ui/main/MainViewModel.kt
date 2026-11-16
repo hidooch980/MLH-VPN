@@ -14,6 +14,7 @@ import com.v2ray.ang.core.EnginePreference
 import com.v2ray.ang.core.MolidoProtocol
 import com.v2ray.ang.core.SmartEngineOrchestrator
 import com.v2ray.ang.core.SmartSelectionStore
+import com.v2ray.ang.core.ProbeFreshness
 import com.v2ray.ang.core.ConnectionModePolicy
 import com.v2ray.ang.dto.ConnectionTestResult
 import com.v2ray.ang.dto.GroupMapItem
@@ -120,6 +121,7 @@ class MainViewModel(
     private var testResultFlushJob: Job? = null
     private val pendingTestResults = linkedMapOf<String, Long>()
 
+    private val probeFreshness = ProbeFreshness()
     private val testRequests = MainTestRequests()
     private var bulkTestJob: Job? = null
     private data class ActiveQualityProbe(
@@ -254,6 +256,7 @@ class MainViewModel(
     }
 
     private fun queueTestResult(result: RealPingResult, request: MainTestRequests.Bulk) {
+        probeFreshness.record(result.guid, android.os.SystemClock.elapsedRealtime())
         pendingTestResults[result.guid] = result.delayMillis
         if (testResultFlushJob?.isActive == true) return
 
@@ -393,6 +396,8 @@ class MainViewModel(
      */
     private fun buildSmartEngineCandidates(): List<EngineCandidate> =
         currentServers().mapNotNull { server ->
+            val now = android.os.SystemClock.elapsedRealtime()
+            if (!probeFreshness.isFresh(server.guid, now)) return@mapNotNull null
             val protocol = server.profile.configType.name.toMolidoProtocol() ?: return@mapNotNull null
             val country = SmartSelectionStore.verifiedCountry(server.guid)
             val quality = SmartQualityEngine.assess(
