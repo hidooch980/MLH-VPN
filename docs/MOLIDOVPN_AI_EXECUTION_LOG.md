@@ -88,3 +88,26 @@
 - Source review found that smart orchestration selects a profile but does not own the actual tunnel lifecycle; candidate latency freshness is not established at the call site.
 - A shared multi-engine adapter, per-engine runtime verification, full license/SBOM clearance, multilingual resources, physical-device leak/kill-switch tests, and production signing continuity remain open.
 - Status: preview CI green; production release and physical VPN acceptance remain blocked. No merge to main.
+
+
+## 2026-11-16 — Hardening pass: probe freshness and Xray lifecycle adapter
+
+### Source changes on feature branch
+- MainViewModel freshness gate: commit `b9d057a55c61654f0c75730315f182a7af99d22d`.
+- Added monotonic `ProbeFreshness` with a five-minute TTL; persisted latency values loaded from cache are not considered fresh after process restart. Missing, stale and future-dated observations are rejected from smart candidate construction.
+- Added unit tests for unknown, fresh, stale, future-dated and blank-ID probe observations: commit `e4d76eb54be892fe14be0236d683e1c8542fa046` and `711afcd0e4772194d0065926cafc872281dd3b42`.
+- Added `EngineAdapter` lifecycle contract and `XrayCoreEngineAdapter`; routed CoreServiceManager start/stop/status through this adapter while leaving Xray-specific delay/traffic/process APIs on the existing CoreController: commits `7b9129b8262a369956a47b7ceaf8cac0342a1457` and `920824be81828dd52e57141abbb5d792024bf888`.
+- Only the Xray-compatible core is registered as an implemented adapter. This does not enable WireGuard/Hysteria2 as independent engines and does not establish multi-engine switching.
+
+### CI
+- Latest Android workflow run: [43923994731](https://github.com/hidooch980/MLH-VPN/actions/runs/43923994731).
+- Tested HEAD: `920824be81828dd52e57141abbb5d792024bf888`.
+- Overlay Python checks passed; Android Gradle build/tests were still running when this note was written. No pass/fail claim is made until the workflow completes.
+
+### Still blocked / requires device or owner-provided inputs
+- Real ARM64 phone testing with a valid server profile: handshake, routed traffic, public egress IP, DNS, IPv4/IPv6 leak, Kill Switch/Always-on, force-stop, permission revoke, airplane mode and Wi-Fi/mobile handover.
+- Full protocol-by-protocol runtime acceptance; only Xray lifecycle is behind the adapter contract at this stage.
+- Full SBOM and per-dependency license/NOTICE clearance.
+- Persian/English/Arabic/Turkish resource localization and accessibility acceptance.
+- Production signing continuity and install-over-upgrade test using the existing signing identity.
+- No merge to `main`; no production release.
