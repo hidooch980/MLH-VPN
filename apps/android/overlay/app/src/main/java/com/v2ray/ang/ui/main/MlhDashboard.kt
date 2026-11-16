@@ -346,8 +346,8 @@ private fun countryName(code: String): String = Locale.Builder().setRegion(code)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(protocol.label, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                     Text(
-                        if (capability?.evidence == ProtocolEvidence.SOURCE_DOCUMENTED) stringResource(R.string.mlh_documented_core) else stringResource(R.string.mlh_needs_review),
-                        color = Mint, fontSize = 11.sp
+                        if (capability?.deviceVerified == true) stringResource(R.string.mlh_documented_core) else stringResource(R.string.mlh_needs_review),
+                        color = if (capability?.deviceVerified == true) Mint else Color(0xFFFFD27A), fontSize = 11.sp
                     )
                 }
                 Surface(color = Color(0xFF553F16), shape = RoundedCornerShape(50)) {
