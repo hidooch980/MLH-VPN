@@ -4,18 +4,19 @@
 
 The feature branch currently targets MolidoVPN AI 1.2.0 (versionCode 11), with the existing Android package identity and the established 1.1.0 signing certificate. Never change the application ID or rotate the signing certificate for an in-place upgrade.
 
-## Existing GitHub Actions signing secrets
+## Recovering the original VPN signing identity
 
-Earlier project setup recorded these four repository Actions secrets as already present:
+The original signed Android release workflow (run `43440434815`, 2026-11-13) produced the encrypted artifact `MLHVPN-encrypted-signing-backup`. The artifact is still retained by GitHub Actions and contains `MLHVPN-signing-backup.cms`. It was downloaded and inspected; it contains an encrypted CMS backup, not a plaintext private key.
 
-- `ANDROID_KEYSTORE_BASE64`
-- `ANDROID_KEYSTORE_PASSWORD`
-- `ANDROID_KEY_ALIAS`
-- `ANDROID_KEY_PASSWORD`
+The release workflow downloads that exact artifact and decrypts it using the original recovery private key. Configure one repository Actions secret:
 
-The release workflow now reuses this established keystore and credentials. It imports the selected key into a temporary PKCS#12 container, extracts a temporary PKCS#8 key and certificate in the isolated runner, checks the certificate SHA-256 fingerprint against the installed 1.1.0 release identity (`3C8849FC59084133E7B09402EE1665563F5329CE3602380A7E05FAEE8D4E7D7D`), signs all three release APKs, verifies signatures and package/version metadata, and runs an Android emulator upgrade smoke test from the published 1.1.0 Universal APK before publishing v1.2.0. The workflow fails closed if any secret is absent, the keystore cannot be opened, or its certificate does not match. Secret values are never read into chat, committed, or printed to logs.
+- `MLHVPN_BACKUP_PRIVATE_KEY_PEM_B64`: base64-encoded contents of the original `backup-private.pem` that corresponds to `apps/android/signing-backup-public.pem`.
 
-The existing keystore is the source of the private signing key. The public certificate in this repository is not sufficient by itself to sign APKs. If the keystore is missing, corrupt, or does not match the installed certificate, an APK signed with a newly generated key cannot update the already-installed app; users would need an uninstall/reinstall migration and would lose app-private data.
+Do not use signing secrets from another repository or generate a replacement key. In particular, the four `ANDROID_*` secrets documented in the separate `molido-robo` project are not configured in this VPN repository and may represent a different Android application identity.
+
+After decrypting the CMS backup, the workflow extracts `signing-key.pk8` and `signing-cert.pem` into an isolated runner directory, checks the recovered certificate SHA-256 fingerprint against the published 1.1.0 identity (`3C8849FC59084133E7B09402EE1665563F5329CE3602380A7E05FAEE8D4E7D7D`), signs all three APKs, verifies signatures and package/version metadata, then runs an Android emulator upgrade smoke test from the published 1.1.0 Universal APK before publishing v1.2.0. Private material is removed when the signing step exits and is never uploaded or committed.
+
+If the original `backup-private.pem` is unavailable, the encrypted CMS artifact cannot be decrypted. The public certificate and already-published APKs do not contain the private key; a new key cannot update existing installations.
 
 ## Dispatch
 
