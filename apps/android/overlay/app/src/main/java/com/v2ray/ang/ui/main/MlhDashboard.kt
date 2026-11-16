@@ -258,7 +258,7 @@ private fun countryName(code: String): String = Locale.Builder().setRegion(code)
             val t = when (code) { "DE","NL","FR","GB" -> Offset(size.width*.53f,size.height*.35f); "US","CA" -> Offset(size.width*.21f,size.height*.38f); "JP","SG" -> Offset(size.width*.82f,size.height*.50f); else -> Offset(size.width*.61f,size.height*.46f) }
             drawCircle(Mint.copy(.18f), 20.dp.toPx(), t); drawCircle(Mint, 7.dp.toPx(), t); drawCircle(White, 2.5.dp.toPx(), t)
         }
-        Text("موقعیت خروجی تأییدشده", Modifier.align(Alignment.BottomCenter).padding(12.dp), color = Muted, fontSize = 11.sp)
+        Text("نمایش تقریبی منطقه خروجی", Modifier.align(Alignment.BottomCenter).padding(12.dp), color = Muted, fontSize = 11.sp)
     }
 }
 
@@ -282,8 +282,8 @@ private fun countryName(code: String): String = Locale.Builder().setRegion(code)
     }
     QualityChart(s.quality)
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        ControlTile("⌁", "وضعیت شبکه", if (s.connected) "اتصال پایدار" else "قطع", s.ping, Modifier.weight(1f))
-        ControlTile("⬡", "مسیر DNS", if (s.connected) "از تونل" else "نامشخص", "آزمون نشت لازم است", Modifier.weight(1f))
+        ControlTile("⌁", "وضعیت شبکه", if (s.connected) "متصل" else "قطع", s.ping, Modifier.weight(1f))
+        ControlTile("⬡", "مسیر DNS", "نیازمند آزمون", "آزمون نشت لازم است", Modifier.weight(1f))
     }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         ControlTile("★", "سرویس مورد علاقه", if (state.isFavorite) "ذخیره شده" else "انتخاب نشده", s.country, Modifier.weight(1f))
