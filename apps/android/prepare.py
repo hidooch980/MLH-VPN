@@ -153,7 +153,7 @@ def prepare(root: Path) -> None:
     # Android requires an explicit per-app user grant before APK installation.
     manifest = project / 'app/src/main/AndroidManifest.xml'
     manifest_text = manifest.read_text()
-    install_permission = '    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />\\n'
+    install_permission = '    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />\n'
     if 'android.permission.REQUEST_INSTALL_PACKAGES' not in manifest_text:
         if '<application' not in manifest_text:
             raise ValueError('Android manifest has no application element')
