@@ -1,6 +1,11 @@
 name: MolidoVPN AI signed production release
 
 on:
+  push:
+    branches: ['feature/molidovpn-ai-redesign']
+    paths:
+      - 'apps/android/**'
+      - '.github/workflows/molidovpn-signed-release.yml'
   workflow_dispatch:
     inputs:
       confirm_release:
@@ -17,7 +22,7 @@ concurrency:
 
 jobs:
   build-sign:
-    if: ${{ inputs.confirm_release == 'RELEASE' }}
+    if: ${{ github.event_name == 'push' || inputs.confirm_release == 'RELEASE' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
