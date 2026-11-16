@@ -9,6 +9,10 @@ import com.v2ray.ang.AppConfig
 import com.v2ray.ang.R
 import com.v2ray.ang.core.ProbeEvidence
 import com.v2ray.ang.core.SmartQualityEngine
+import com.v2ray.ang.core.EngineCandidate
+import com.v2ray.ang.core.EnginePreference
+import com.v2ray.ang.core.MolidoProtocol
+import com.v2ray.ang.core.SmartEngineOrchestrator
 import com.v2ray.ang.core.SmartSelectionStore
 import com.v2ray.ang.core.ConnectionModePolicy
 import com.v2ray.ang.dto.ConnectionTestResult
@@ -372,13 +376,61 @@ class MainViewModel(
     private fun selectConnectionMode(mode: ConnectionMode) {
         SmartSelectionStore.setConnectionMode(mode.name)
         _uiState.update { it.copy(connectionMode = mode) }
-        val compatible = currentServers().filter { server ->
-            ConnectionModePolicy.supports(mode, server.profile.configType.name)
+        val decision = SmartEngineOrchestrator.select(
+            candidates = buildSmartEngineCandidates(),
+            currentServerId = uiState.value.selectedGuid,
+            preference = mode.toEnginePreference(),
+            preferredCountryCode = uiState.value.preferredCountry,
+        )
+        decision.candidate?.takeIf { decision.shouldSwitch }
+            ?.quality?.serverId?.let(::updateSelectedGuid)
+        _uiState.update { it.copy(selectionReason = decision.reason) }
+    }
+
+    /**
+     * Build candidates only from measured, reachable profiles. Unknown latency is
+     * deliberately not treated as a successful probe, so AUTO never invents quality.
+     */
+    private fun buildSmartEngineCandidates(): List<EngineCandidate> =
+        currentServers().mapNotNull { server ->
+            val protocol = server.profile.configType.name.toMolidoProtocol() ?: return@mapNotNull null
+            val country = SmartSelectionStore.verifiedCountry(server.guid)
+            val quality = SmartQualityEngine.assess(
+                ProbeEvidence(
+                    serverId = server.guid,
+                    attempted = 1,
+                    latencyMillis = listOf(server.testDelayMillis).filter { it > 0 },
+                    verifiedCountryCode = country,
+                )
+            )
+            EngineCandidate(
+                quality = quality,
+                protocol = protocol,
+                favorite = SmartSelectionStore.isFavorite(server.guid),
+                countryCode = quality.verifiedCountryCode,
+            )
         }
-        compatible.minByOrNull {
-            ConnectionModePolicy.rank(mode, it.profile.configType.name, it.testDelayMillis)
+
+    private fun ConnectionMode.toEnginePreference(): EnginePreference = when (this) {
+        ConnectionMode.AUTO -> EnginePreference.AUTO
+        ConnectionMode.FAST -> EnginePreference.FAST
+        ConnectionMode.STABLE -> EnginePreference.STABLE
+        ConnectionMode.COMPATIBLE -> EnginePreference.COMPATIBLE
+    }
+
+    private fun String.toMolidoProtocol(): MolidoProtocol? {
+        val normalized = uppercase()
+        return when {
+            normalized.startsWith("HYSTERIA") -> MolidoProtocol.HYSTERIA2
+            normalized == "VMESS" -> MolidoProtocol.VMESS
+            normalized == "VLESS" -> MolidoProtocol.VLESS
+            normalized == "TROJAN" -> MolidoProtocol.TROJAN
+            normalized == "SHADOWSOCKS" -> MolidoProtocol.SHADOWSOCKS
+            normalized == "WIREGUARD" -> MolidoProtocol.WIREGUARD
+            normalized == "SOCKS" -> MolidoProtocol.SOCKS
+            normalized == "HTTP" -> MolidoProtocol.HTTP
+            else -> null
         }
-            ?.guid?.let(::updateSelectedGuid)
     }
 
     // ---------- Initialization ----------
@@ -968,21 +1020,14 @@ class MainViewModel(
 
     private fun onTestsFinished(requestId: String) {
         if (testRequests.completeBulk(requestId) == null) return
-        val assessments = currentServers().map { server ->
-            SmartQualityEngine.assess(ProbeEvidence(
-                serverId = server.guid,
-                attempted = 1,
-                latencyMillis = listOf(server.testDelayMillis).filter { it > 0 },
-            ))
-        }
-        val decision = SmartQualityEngine.selectBest(assessments, uiState.value.selectedGuid)
+        val decision = SmartEngineOrchestrator.select(
+            candidates = buildSmartEngineCandidates(),
+            currentServerId = uiState.value.selectedGuid,
+            preference = uiState.value.connectionMode.toEnginePreference(),
+            preferredCountryCode = uiState.value.preferredCountry,
+        )
         if (!uiState.value.isRunning && decision.shouldSwitch) {
-            decision.selected?.let { selected ->
-                updateSelectedGuid(selected.serverId)
-                SmartSelectionStore.recordSuccessfulConnection(
-                    selected.serverId, selected.verifiedCountryCode, selected.score,
-                )
-            }
+            decision.candidate?.quality?.serverId?.let(::updateSelectedGuid)
         }
         _uiState.update { it.copy(selectionReason = decision.reason) }
         resetTestStatus()
