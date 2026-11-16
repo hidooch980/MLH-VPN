@@ -55,6 +55,7 @@ object CoreServiceManager {
 
 
     private val coreController: CoreController = CoreNativeManager.newCoreController(CoreCallback())
+    private val engineAdapter: EngineAdapter = XrayCoreEngineAdapter(coreController)
     private val mMsgReceive = ReceiveMessageHandler()
     private var currentConfig: ProfileItem? = null
     private var processFinder: XrayProcessFinder? = null
@@ -83,7 +84,7 @@ object CoreServiceManager {
      * Checks if the V2Ray service is running.
      * @return True if the service is running, false otherwise.
      */
-    fun isRunning() = coreController.isRunning
+    fun isRunning() = engineAdapter.isRunning()
 
     /**
      * Gets the name of the currently running server.
@@ -161,7 +162,7 @@ object CoreServiceManager {
         if (dialerAddr.isNotNullEmpty()) {
             CoreNativeManager.reconcileBrowserDialer(dialerAddr)
         }
-        coreController.startLoop(result.content, tunFd)
+        engineAdapter.start(result.content, tunFd)
 
         if (!isRunning()) {
             error("Core failed to start")
@@ -210,7 +211,7 @@ object CoreServiceManager {
         if (isRunning()) {
             CoroutineScope(Dispatchers.IO).launch {
                 try {
-                    coreController.stopLoop()
+                    engineAdapter.stop()
                 } catch (e: Exception) {
                     LogUtil.e(AppConfig.TAG, "StartCore-Manager: Failed to stop V2Ray loop", e)
                 }
@@ -275,7 +276,7 @@ object CoreServiceManager {
             connectionTestScope.coroutineContext.cancelChildren()
             LogUtil.i(AppConfig.TAG, "StartCore-Manager: Core reload start...")
 
-            coreController.stopLoop()
+            engineAdapter.stop()
             launchCore(service, tunFd, isReload = true)
 
             LogUtil.i(AppConfig.TAG, "StartCore-Manager: Core reload finished")
