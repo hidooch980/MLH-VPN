@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: molidovpn-production-release
@@ -29,19 +30,13 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - name: Validate release identity and signing secrets
+      - name: Validate release identity and recovery-key availability
         env:
-          ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS_VALUE: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD_VALUE: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          BACKUP_PRIVATE_KEY_B64: ${{ secrets.MLHVPN_BACKUP_PRIVATE_KEY_PEM_B64 }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          test -n "$ANDROID_KEYSTORE_B64" || { echo "Missing existing ANDROID_KEYSTORE_BASE64 secret"; exit 2; }
-          test -n "$ANDROID_STORE_PASSWORD" || { echo "Missing existing ANDROID_KEYSTORE_PASSWORD secret"; exit 2; }
-          test -n "$ANDROID_KEY_ALIAS_VALUE" || { echo "Missing existing ANDROID_KEY_ALIAS secret"; exit 2; }
-          test -n "$ANDROID_KEY_PASSWORD_VALUE" || { echo "Missing existing ANDROID_KEY_PASSWORD secret"; exit 2; }
+          test -n "$BACKUP_PRIVATE_KEY_B64" || { echo "Missing MLHVPN_BACKUP_PRIVATE_KEY_PEM_B64; this must be the private recovery key for the 2026-11-13 encrypted VPN signing backup"; exit 2; }
           if gh release view v1.2.0 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "v1.2.0 already exists; refusing to overwrite a release"; exit 3
           fi
@@ -51,6 +46,13 @@ jobs:
           assert m["application_version"] == "1.2.0"
           assert m["application_version_code"] == 11
           PY
+      - name: Download the original encrypted VPN signing backup
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: MLHVPN-encrypted-signing-backup
+          path: signing-backup
+          run-id: 43440434815
+          github-token: ${{ github.token }}
       - name: Test overlay and fetch pinned Android source
         run: |
           set -euo pipefail
@@ -71,48 +73,43 @@ jobs:
           log-accepted-android-sdk-licenses: false
       - name: Build release APKs and run unit tests
         run: bash apps/android/build.sh "$PWD/work/android" release
-      - name: Sign with the established MolidoVPN release identity
+      - name: Recover and verify the original VPN signing identity, then sign APKs
         env:
-          ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS_VALUE: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD_VALUE: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          BACKUP_PRIVATE_KEY_B64: ${{ secrets.MLHVPN_BACKUP_PRIVATE_KEY_PEM_B64 }}
         run: |
           set -euo pipefail
           umask 077
-          mkdir -p "$RUNNER_TEMP/molidovpn-signing" dist
-          printf '%s' "$ANDROID_KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/molidovpn-signing/release.keystore"
-          unset ANDROID_KEYSTORE_B64
-          tmp_password="$(openssl rand -hex 24)"
-          keytool -importkeystore -noprompt \
-            -srckeystore "$RUNNER_TEMP/molidovpn-signing/release.keystore" \
-            -srcstorepass "$ANDROID_STORE_PASSWORD" -srcalias "$ANDROID_KEY_ALIAS_VALUE" \
-            -srckeypass "$ANDROID_KEY_PASSWORD_VALUE" \
-            -destkeystore "$RUNNER_TEMP/molidovpn-signing/release.p12" \
-            -deststoretype PKCS12 -deststorepass "$tmp_password" -destkeypass "$tmp_password"
-          unset ANDROID_STORE_PASSWORD ANDROID_KEY_ALIAS_VALUE ANDROID_KEY_PASSWORD_VALUE
-          openssl pkcs12 -in "$RUNNER_TEMP/molidovpn-signing/release.p12" -passin "pass:$tmp_password" -nocerts -nodes -out "$RUNNER_TEMP/molidovpn-signing/key.pem"
-          openssl pkcs12 -in "$RUNNER_TEMP/molidovpn-signing/release.p12" -passin "pass:$tmp_password" -clcerts -nokeys -out "$RUNNER_TEMP/molidovpn-signing/cert.pem"
-          openssl pkcs8 -topk8 -nocrypt -in "$RUNNER_TEMP/molidovpn-signing/key.pem" -outform DER -out "$RUNNER_TEMP/molidovpn-signing/key.pk8"
-          rm -f "$RUNNER_TEMP/molidovpn-signing/key.pem" "$RUNNER_TEMP/molidovpn-signing/release.keystore" "$RUNNER_TEMP/molidovpn-signing/release.p12"
-          unset tmp_password
+          signing_dir="$RUNNER_TEMP/molidovpn-signing"
+          mkdir -p "$signing_dir" dist
+          trap 'rm -rf "$signing_dir"' EXIT
+          printf '%s' "$BACKUP_PRIVATE_KEY_B64" | base64 --decode > "$signing_dir/backup-private.pem"
+          unset BACKUP_PRIVATE_KEY_B64
+          test -s signing-backup/MLHVPN-signing-backup.cms
+          openssl cms -decrypt -binary -inform DER \
+            -in signing-backup/MLHVPN-signing-backup.cms \
+            -inkey "$signing_dir/backup-private.pem" \
+            -out "$signing_dir/signing-backup.tar.gz"
+          mkdir "$signing_dir/recovered"
+          tar -xzf "$signing_dir/signing-backup.tar.gz" -C "$signing_dir/recovered"
+          cp "$signing_dir/recovered/signing-key.pk8" "$signing_dir/key.pk8"
+          cp "$signing_dir/recovered/signing-cert.pem" "$signing_dir/cert.pem"
           expected='3C8849FC59084133E7B09402EE1665563F5329CE3602380A7E05FAEE8D4E7D7D'
-          actual=$(openssl x509 -in "$RUNNER_TEMP/molidovpn-signing/cert.pem" -noout -fingerprint -sha256 | cut -d= -f2 | tr -d ':')
-          test "$actual" = "$expected" || { echo "Existing keystore does not match installed 1.1.0 identity"; exit 4; }
+          actual=$(openssl x509 -in "$signing_dir/cert.pem" -noout -fingerprint -sha256 | cut -d= -f2 | tr -d ':')
+          test "$actual" = "$expected" || { echo "Recovered signing certificate does not match installed 1.1.0 identity"; exit 4; }
           sdk="$ANDROID_HOME/build-tools/37.0.0"
           for apk in work/android/V2rayNG/app/build/outputs/apk/fdroid/release/*.apk; do
             name=$(basename "$apk")
             "$sdk/zipalign" -c -P 16 4 "$apk"
-            "$sdk/apksigner" sign --key "$RUNNER_TEMP/molidovpn-signing/key.pk8" --cert "$RUNNER_TEMP/molidovpn-signing/cert.pem" --v1-signing-enabled false --v4-signing-enabled false --out "dist/$name" "$apk"
-            "$sdk/apksigner" verify --verbose --print-certs "dist/$name" > "$RUNNER_TEMP/molidovpn-signing/verify.txt"
-            grep -Fqi "certificate SHA-256 digest: 3c8849fc59084133e7b09402ee1665563f5329ce3602380a7e05faee8d4e7d7d" "$RUNNER_TEMP/molidovpn-signing/verify.txt"
-            "$sdk/aapt2" dump badging "dist/$name" > "$RUNNER_TEMP/molidovpn-signing/badging.txt"
-            grep -F "package: name='io.github.hidooch980.mlhvpn.fdroid'" "$RUNNER_TEMP/molidovpn-signing/badging.txt"
-            grep -F "versionName='1.2.0'" "$RUNNER_TEMP/molidovpn-signing/badging.txt"
-            if grep -Fq 'application-debuggable' "$RUNNER_TEMP/molidovpn-signing/badging.txt"; then exit 5; fi
+            "$sdk/apksigner" sign --key "$signing_dir/key.pk8" --cert "$signing_dir/cert.pem" --v1-signing-enabled false --v4-signing-enabled false --out "dist/$name" "$apk"
+            "$sdk/apksigner" verify --verbose --print-certs "dist/$name" > "$signing_dir/verify.txt"
+            grep -Fqi "certificate SHA-256 digest: 3c8849fc59084133e7b09402ee1665563f5329ce3602380a7e05faee8d4e7d7d" "$signing_dir/verify.txt"
+            "$sdk/aapt2" dump badging "dist/$name" > "$signing_dir/badging.txt"
+            grep -F "package: name='io.github.hidooch980.mlhvpn.fdroid'" "$signing_dir/badging.txt"
+            grep -F "versionName='1.2.0'" "$signing_dir/badging.txt"
+            if grep -Fq 'application-debuggable' "$signing_dir/badging.txt"; then exit 5; fi
           done
           test "$(find dist -maxdepth 1 -name '*.apk' | wc -l)" -eq 3
-          cp "$RUNNER_TEMP/molidovpn-signing/cert.pem" dist/MLHVPN-signing-cert.pem
+          cp "$signing_dir/cert.pem" dist/MLHVPN-signing-cert.pem
           cp apps/android/INSTALL.fa.md apps/android/RELEASE-NOTES.fa.md dist/
           tar --exclude=.git --exclude=.gradle --exclude=build --exclude=libs --exclude=local.properties -czf dist/MLHVPN-android-source.tar.gz apps/android work/android
           (cd dist && sha256sum *.apk *.pem *.tar.gz > SHA256SUMS)
