@@ -111,3 +111,9 @@
 - Persian/English/Arabic/Turkish resource localization and accessibility acceptance.
 - Production signing continuity and install-over-upgrade test using the existing signing identity.
 - No merge to `main`; no production release.
+
+
+## 2026-11-16 — Active-session selection guard
+- Commit `d9973366fe251794654b0d481853c510af3f8c16`: changing AUTO/FAST/STABLE/COMPATIBLE while a tunnel is running now stores the preference for the next session and does not change the selected profile underneath the active tunnel. This prevents the UI's selected profile from diverging from the endpoint actually carrying traffic.
+- Android workflow run: [43924969206](https://github.com/hidooch980/MLH-VPN/actions/runs/43924969206), HEAD `d9973366fe251794654b0d481853c510af3f8c16`; queued/pending at log time. No build result claimed.
+- The preceding workflow [43923994731](https://github.com/hidooch980/MLH-VPN/actions/runs/43923994731) was still running its Gradle build; it is not evidence of a completed build for the later HEAD.
