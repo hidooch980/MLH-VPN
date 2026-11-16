@@ -37,10 +37,15 @@ data class SelectionDecision(
 object SmartQualityEngine {
     const val QUARANTINE_FAILURES = 3
     private const val MIN_SWITCH_IMPROVEMENT = 25
+    private const val MAX_PROBE_LATENCY_MILLIS = 120_000L
 
     fun assess(evidence: ProbeEvidence): QualityAssessment {
-        val successful = evidence.latencyMillis.filter { it >= 0 }.sorted()
-        val attempted = evidence.attempted.coerceAtLeast(successful.size).coerceAtLeast(1)
+        // Reject negative and implausibly large samples; count them as failed attempts.
+        // A bounded input also keeps median/jitter arithmetic overflow-safe.
+        val successful = evidence.latencyMillis
+            .filter { it in 0..MAX_PROBE_LATENCY_MILLIS }
+            .sorted()
+        val attempted = evidence.attempted.coerceAtLeast(evidence.latencyMillis.size).coerceAtLeast(1)
         val failures = (attempted - successful.size).coerceAtLeast(0)
         val failurePercent = (failures * 100.0 / attempted).roundToLong().toInt()
         val median = successful.medianOrNull()
@@ -48,7 +53,9 @@ object SmartQualityEngine {
             successful.map { abs(it - center) }.average().roundToLong()
         }
         val throughput = if (evidence.transferredBytes > 0 && evidence.transferDurationMillis > 0) {
-            evidence.transferredBytes * 1000 / evidence.transferDurationMillis
+            ((evidence.transferredBytes.toDouble() * 1000.0) /
+                evidence.transferDurationMillis.toDouble())
+                .coerceAtMost(Long.MAX_VALUE.toDouble()).toLong()
         } else null
         val quarantined = evidence.consecutiveFailures >= QUARANTINE_FAILURES
         val reachable = median != null && !quarantined
@@ -72,7 +79,8 @@ object SmartQualityEngine {
         }
         return QualityAssessment(
             evidence.serverId, reachable, median, jitter, failurePercent, throughput,
-            evidence.verifiedCountryCode?.uppercase(), score, grade, quarantined,
+            evidence.verifiedCountryCode?.takeIf { it.matches(Regex("[A-Za-z]{2}")) }
+                ?.uppercase(), score, grade, quarantined,
         )
     }
 
