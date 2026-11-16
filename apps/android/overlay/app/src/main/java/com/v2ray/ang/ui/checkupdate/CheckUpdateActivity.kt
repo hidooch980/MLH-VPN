@@ -18,6 +18,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -67,6 +68,7 @@ fun CheckUpdateScreen(
     viewModel: CheckUpdateViewModel,
     onBackClick: () -> Unit
 ) {
+    val context = LocalContext.current
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val checkPreRelease by viewModel.checkPreRelease.collectAsStateWithLifecycle()
     val versionText = "v${BuildConfig.VERSION_NAME}"
@@ -104,7 +106,7 @@ fun CheckUpdateScreen(
     }
 
     UpdateAvailableDialog(viewModel) { url ->
-        runCatching { UpdateInstaller.startDownload(context = androidx.compose.ui.platform.LocalContext.current, rawUrl = url) }
+        runCatching { UpdateInstaller.startDownload(context = context, rawUrl = url) }
             .onFailure { /* Keep the update dialog usable if Android rejects the download request. */ }
     }
 }
