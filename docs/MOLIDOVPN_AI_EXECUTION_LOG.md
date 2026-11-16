@@ -160,3 +160,21 @@
 - Run `43926904351` failed at `:app:compileFdroidDebugUnitTestKotlin`; the exact compiler errors were unresolved JUnit 4 imports (`org.junit.Assert` / `org.junit.Test`) in `ProbeFreshnessTest.kt`. This is a test-framework import mismatch, not a production Kotlin compile error.
 - Corrected `ProbeFreshnessTest.kt` to use the JUnit Jupiter imports already used by the neighboring adapter/history tests: commit `7178a87bb13f2eec7c2a91d7cff417db0fdf1802`.
 - A new CI run for that correction is expected from the branch push; it must complete successfully before considering the build gate passed.
+
+
+## 2026-11-16 — تصمیم انتشار نهایی MolidoVPN AI
+
+### دستور قطعی محصول
+- تولید و انتشار APKهای Preview/Debug به‌عنوان خروجی قابل تحویل متوقف شود؛ خروجی قابل تحویل فقط APK نهایی Stable و امضاشده است.
+- نام و هویت نهایی محصول: MolidoVPN AI.
+- قابلیت‌های نمایشی، داده‌های ساختگی، مسیرهای آزمایشی و کنترل‌های فاقد عملکرد واقعی باید از محصول Stable حذف یا غیرفعال شوند؛ تست‌های داخلی و خودکار حذف نمی‌شوند.
+- تست‌های unit، integration، امنیت، اتصال، نشت DNS/IP، Kill Switch، تغییر شبکه، امضای بسته و ارتقای نسخه باید حفظ و به‌عنوان gate انتشار اجرا شوند.
+- هیچ قابلیت یا پروتکلی بدون مدرک runtime واقعی نباید در نسخه Stable به‌عنوان پشتیبانی‌شده معرفی شود.
+- کلید امضای قبلی باید از backup رمزگذاری‌شده با secret امن GitHub بازیابی شود؛ ساخت کلید جایگزین ممنوع است تا سازگاری upgrade حفظ شود.
+- هیچ merge به main و هیچ انتشار Stable تا عبور از gateها و تأیید نهایی انجام نشود.
+
+### وضعیت هنگام ثبت تصمیم
+- Workflow قدیمی Preview با run ID `43928926212` هنوز در حال اجرا بود؛ این اجرا قبل از ثبت تصمیم شروع شده و خروجی آن مجوز انتشار Stable نیست. این محیط ابزار لغو workflow فعال را در اختیار ندارد.
+- secret لازم برای بازیابی signing identity: `MLHVPN_BACKUP_PRIVATE_KEY_PEM_B64`؛ مقدار secret یا کلید خصوصی نباید در گفتگو یا مخزن قرار گیرد.
+- تست اتصال end-to-end و DNS/IPv4/IPv6 leak روی گوشی واقعی همچنان به دستگاه Android و endpoint/config معتبر نیاز دارد؛ CI یا build به‌تنهایی جایگزین آن نیست.
+- وضعیت: تصمیم انتشار ثبت شد؛ پیاده‌سازی حذف مسیر Preview، تکمیل قابلیت‌های Stable، بازیابی امضا و آزمون دستگاه هنوز باز است. هیچ APK نهایی در این مرحله تولید یا تحویل نشده است.
