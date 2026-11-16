@@ -1,6 +1,7 @@
 package com.v2ray.ang.ui.checkupdate
 
 import android.os.Bundle
+import android.content.BroadcastReceiver
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -17,11 +18,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.v2ray.ang.BuildConfig
+import com.v2ray.ang.handler.UpdateInstaller
 import com.v2ray.ang.R
 import com.v2ray.ang.ui.base.BaseComponentActivity
 import com.v2ray.ang.ui.compose.AppTopBar
@@ -30,17 +31,29 @@ import com.v2ray.ang.ui.compose.SettingsMenuItem
 import com.v2ray.ang.ui.compose.SettingsSwitchItem
 import com.v2ray.ang.ui.compose.VersionInfoBlock
 import com.v2ray.ang.ui.compose.verticalScrollbar
-import com.v2ray.ang.util.Utils
 
 class CheckUpdateActivity : BaseComponentActivity() {
 
     private val viewModel: CheckUpdateViewModel by viewModels()
+    private var updateReceiver: BroadcastReceiver? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        updateReceiver = UpdateInstaller.register(this)
         if (savedInstanceState == null) {
             viewModel.checkForUpdates()
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        UpdateInstaller.openPendingInstall(this)
+    }
+
+    override fun onDestroy() {
+        updateReceiver?.let { runCatching { unregisterReceiver(it) } }
+        updateReceiver = null
+        super.onDestroy()
     }
 
     @Composable
@@ -90,12 +103,14 @@ fun CheckUpdateScreen(
         }
     }
 
-    UpdateAvailableDialog(viewModel)
+    UpdateAvailableDialog(viewModel) { url ->
+        runCatching { UpdateInstaller.startDownload(context = androidx.compose.ui.platform.LocalContext.current, rawUrl = url) }
+            .onFailure { /* Keep the update dialog usable if Android rejects the download request. */ }
+    }
 }
 
 @Composable
-fun UpdateAvailableDialog(viewModel: CheckUpdateViewModel) {
-    val context = LocalContext.current
+fun UpdateAvailableDialog(viewModel: CheckUpdateViewModel, onInstall: (String) -> Unit) {
     val showUpdateDialog by viewModel.showUpdateDialog.collectAsStateWithLifecycle()
     val updateResult by viewModel.updateResult.collectAsStateWithLifecycle()
     if (showUpdateDialog && updateResult != null) {
@@ -116,7 +131,7 @@ fun UpdateAvailableDialog(viewModel: CheckUpdateViewModel) {
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.dismissUpdateDialog()
-                    result.downloadUrl?.let { Utils.openUri(context, it) }
+                    result.downloadUrl?.let(onInstall)
                 }) {
                     Text(stringResource(R.string.update_now))
                 }
