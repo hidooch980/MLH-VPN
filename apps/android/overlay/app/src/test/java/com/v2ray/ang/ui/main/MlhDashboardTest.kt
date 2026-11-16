@@ -4,6 +4,13 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class MlhDashboardTest {
+    @Test fun `dashboard follows RTL only for right-to-left locales`() {
+        assertEquals(androidx.compose.ui.unit.LayoutDirection.Rtl, dashboardLayoutDirection("fa"))
+        assertEquals(androidx.compose.ui.unit.LayoutDirection.Rtl, dashboardLayoutDirection("ar"))
+        assertEquals(androidx.compose.ui.unit.LayoutDirection.Ltr, dashboardLayoutDirection("en"))
+        assertEquals(androidx.compose.ui.unit.LayoutDirection.Ltr, dashboardLayoutDirection("tr"))
+    }
+
     @Test fun `timer handles zero negative and sessions exceeding a day`() {
         assertEquals("00:00:00", formatSessionTime(-1))
         assertEquals("01:01:01", formatSessionTime(3_661_000))
