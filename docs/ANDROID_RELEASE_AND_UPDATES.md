@@ -4,16 +4,18 @@
 
 The feature branch currently targets MolidoVPN AI 1.2.0 (versionCode 11), with the existing Android package identity and the established 1.1.0 signing certificate. Never change the application ID or rotate the signing certificate for an in-place upgrade.
 
-## Required GitHub Actions secrets
+## Existing GitHub Actions signing secrets
 
-The private signing key is intentionally not stored in Git. Before dispatching `.github/workflows/molidovpn-signed-release.yml`, configure these repository Actions secrets:
+Earlier project setup recorded these four repository Actions secrets as already present:
 
-- `MOLIDO_ANDROID_SIGNING_KEY_PK8_B64`: base64-encoded DER PKCS#8 private key corresponding to the existing release certificate.
-- `MOLIDO_ANDROID_SIGNING_CERT_PEM_B64`: base64-encoded PEM certificate whose SHA-256 fingerprint is `3C8849FC59084133E7B09402EE1665563F5329CE3602380A7E05FAEE8D4E7D7D`.
+- `ANDROID_KEYSTORE_BASE64`
+- `ANDROID_KEYSTORE_PASSWORD`
+- `ANDROID_KEY_ALIAS`
+- `ANDROID_KEY_PASSWORD`
 
-The workflow checks the certificate fingerprint, signs all three release APKs, verifies the signatures and package/version metadata, then performs an Android emulator upgrade smoke test from the published 1.1.0 Universal APK before publishing v1.2.0. It fails closed if either secret is missing or the certificate does not match. Do not place either secret in source control, logs, artifacts, or issue comments.
+The release workflow now reuses this established keystore and credentials. It imports the selected key into a temporary PKCS#12 container, extracts a temporary PKCS#8 key and certificate in the isolated runner, checks the certificate SHA-256 fingerprint against the installed 1.1.0 release identity (`3C8849FC59084133E7B09402EE1665563F5329CE3602380A7E05FAEE8D4E7D7D`), signs all three release APKs, verifies signatures and package/version metadata, and runs an Android emulator upgrade smoke test from the published 1.1.0 Universal APK before publishing v1.2.0. The workflow fails closed if any secret is absent, the keystore cannot be opened, or its certificate does not match. Secret values are never read into chat, committed, or printed to logs.
 
-The private key must be recovered from the owner's protected signing-key backup. The public certificate in this repository is not sufficient to sign APKs. If the private key is lost, an APK signed with a newly generated key cannot update the already-installed app; users would need an uninstall/reinstall migration and would lose app-private data.
+The existing keystore is the source of the private signing key. The public certificate in this repository is not sufficient by itself to sign APKs. If the keystore is missing, corrupt, or does not match the installed certificate, an APK signed with a newly generated key cannot update the already-installed app; users would need an uninstall/reinstall migration and would lose app-private data.
 
 ## Dispatch
 
