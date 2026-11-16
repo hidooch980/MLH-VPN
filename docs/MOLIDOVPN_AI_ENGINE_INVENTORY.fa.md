@@ -51,3 +51,10 @@
 - sing-box را فقط پس از ارزیابی رسمی و benchmark به شاخه آزمایشی اضافه می‌کنیم.
 - WireGuard و Hysteria2 را به‌صورت capabilityهای مستقل با test matrix تأیید می‌کنیم.
 - هیچ موتور یا پروتکلی پیش از عبور از دروازه‌های release، Stable اعلام نمی‌شود.
+
+
+## وضعیت پس از Hardening در 2026-11-16
+- `EngineAdapter` contract و `XrayCoreEngineAdapter` به `CoreServiceManager` متصل شده‌اند؛ start/stop/status از adapter عبور می‌کند.
+- این adapter فقط lifecycle هسته Xray-compatible موجود را پوشش می‌دهد؛ هیچ ادعایی درباره فعال بودن مستقل WireGuard، Hysteria2 یا sing-box ندارد.
+- انتخاب هوشمند اکنون فقط latency ثبت‌شده در همین فرایند و حداکثر تا ۵ دقیقه را می‌پذیرد. داده cache‌شده پس از restart تا انجام probe جدید قابل استفاده برای انتخاب خودکار نیست.
+- تست واحد ProbeFreshness اضافه شده؛ نتیجه نهایی CI برای HEAD جدید باید جداگانه بررسی شود.
