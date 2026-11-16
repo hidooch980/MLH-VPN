@@ -79,7 +79,7 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
         traffic?.received?.let { formatTraffic(it.toDouble()) } ?: unavailable,
     )
     val appLanguage = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]?.language ?: Locale.getDefault().language
-    val appLayoutDirection = if (appLanguage in setOf("ar", "fa", "he", "ur")) LayoutDirection.Rtl else LayoutDirection.Ltr
+    val appLayoutDirection = dashboardLayoutDirection(appLanguage)
     CompositionLocalProvider(LocalLayoutDirection provides appLayoutDirection) {
         ModalNavigationDrawer(
             drawerState = drawerState,
@@ -439,6 +439,9 @@ private fun countryName(code: String): String = Locale.Builder().setRegion(code)
 private fun qualityResource(g:QualityGrade?)=when(g){QualityGrade.EXCELLENT->R.string.mlh_quality_excellent;QualityGrade.GOOD->R.string.mlh_quality_good;QualityGrade.FAIR->R.string.mlh_quality_fair;QualityGrade.POOR->R.string.mlh_quality_poor;else->R.string.mlh_unavailable}
 private fun qualityColor(g:QualityGrade?)=when(g){QualityGrade.EXCELLENT->Good;QualityGrade.GOOD->Mint;QualityGrade.FAIR->Color(0xFFFFC857);QualityGrade.POOR->Color(0xFFFF6B6B);else->Muted}
 private fun reasonResource(r:String?)=when(r){"no_current_server"->R.string.mlh_reason_first_choice;"current_unhealthy"->R.string.mlh_reason_unhealthy;"material_quality_gain"->R.string.mlh_reason_better;"keep_stable_connection"->R.string.mlh_reason_stable;else->R.string.mlh_reason_unavailable}
+internal fun dashboardLayoutDirection(language: String): LayoutDirection =
+    if (language.lowercase(Locale.ROOT) in setOf("ar", "fa", "he", "ur")) LayoutDirection.Rtl else LayoutDirection.Ltr
+
 internal fun latencyScore(ms:Long)=when{ms<=0->0;ms<=80->96;ms<=130->88;ms<=200->76;ms<=350->58;else->35}
 internal fun formatSessionTime(milliseconds:Long):String{val s=milliseconds.coerceAtLeast(0)/1000;return String.format(Locale.ROOT,"%02d:%02d:%02d",s/3600,s/60%60,s%60)}
 internal fun formatTraffic(bytes:Double):String=when{bytes>=1_073_741_824->String.format(Locale.ROOT,"%.1f GiB",bytes/1_073_741_824);bytes>=1_048_576->String.format(Locale.ROOT,"%.1f MiB",bytes/1_048_576);bytes>=1024->String.format(Locale.ROOT,"%.1f KiB",bytes/1024);else->String.format(Locale.ROOT,"%.0f B",bytes.coerceAtLeast(0.0))}
