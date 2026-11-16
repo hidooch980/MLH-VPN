@@ -133,3 +133,24 @@
 - Added explicit localized disclosure (English, Persian, Arabic, Turkish) that trend history is not yet collected and the displayed score represents only the latest assessment.
 - Commits: resource strings `17e9b0cd49e72c79a0e7f980d34cb6ef3c07fda6`, `ab0e703b30174618c26e3a2dfc5af80b71569e34`, `8f4b1add788639a19ed438b7f2e2abf17fe9228e`, `15cc51cac6dce098221a6ed6076201e4d9766c66`; UI `7ea1fb2b1ef8fa7fc554aaee34232edc442431f5`.
 - This is a correctness fix, not a claim that historical analytics are implemented.
+
+
+## 2026-11-16 — Recovery retry, privacy-safe quality history, and release gates
+
+### Implemented on the feature branch
+- `fd51b112c5861becb9cc7bfd6572677edab0bc3b`: network handover recovery now performs up to three bounded attempts with 0.5s / 1.5s / 4s backoff, including restart when the Xray core is no longer running. Final failure is surfaced as a generic reconnect message. This is recovery for the currently wired Xray-compatible adapter only; it is not per-engine recovery for engines that are not integrated.
+- The same change removes logging of generated tunnel config and avoids forwarding native exception messages to UI/logs, reducing risk of exposing credentials or endpoints.
+- `35e798a87947b0da5913d6b6915aff127f144789`, `6b76264028136c4f55edf8c8ca0b915d3764cf11`, `1872c85bf8b47bef705f66ee9ee1e5067d00d0d2`: added a bounded local quality-history store and codec tests. It records aggregate timestamp, score, latency, jitter, failure percentage and measured throughput only; it deliberately omits server IDs, IPs, endpoints, configuration and DNS/activity data.
+- `30018ea23a00f1249a5fee644853f6b0c1367942`, `b63a915079119512e47a17fc1cd516959baf9f17`: history is loaded into UI state and appended after real quality assessments.
+- `a1da38e59a1579fe29b989a014a863ab575e5ed8`, `0b5f204dfb2597b10c2a663fb15920cf4028cf4b`, `48073a38eb887521fd61e6960facf890adfdf5cd`, `a0b88b687a308e09884f5304e11c1fc390200a8b`, `269435bef9c8b978ab080f3c08a5b4f33c83b217`: dashboard history view and English/Persian/Arabic/Turkish labels added.
+
+### CI
+- Workflow [43926904351](https://github.com/hidooch980/MLH-VPN/actions/runs/43926904351), HEAD `269435bef9c8b978ab080f3c08a5b4f33c83b217`, was in progress when this entry was written. No pass/fail claim is made yet.
+- Earlier CI attempts were cancelled by subsequent pushes; only the latest run for the final code HEAD is relevant.
+
+### Explicit blockers not solvable from repository code alone
+- WireGuard and Hysteria2 still lack an independently proven engine adapter/runtime acceptance path. Source documentation/config formatting is not proof of end-to-end connectivity. Do not mark either protocol stable without pinned runtime, ABI/license review, valid endpoint tests and real-device traffic verification.
+- IPv4/IPv6 egress, DNS leak, Kill Switch/Always-on and Wi-Fi/mobile handover still require a physical ARM64 phone and a valid test profile entered locally on that phone. No such device/config is attached to this development environment.
+- The previous signing identity can only be restored by decrypting the existing encrypted backup. The signed-release workflow expects GitHub Actions secret `MLHVPN_BACKUP_PRIVATE_KEY_PEM_B64`; the private recovery key must be supplied by the owner through GitHub Secrets, never in chat or repository. Do not generate a replacement key because it would break upgrade continuity.
+- The signed-release workflow includes certificate fingerprint verification and emulator install-over-upgrade smoke from v1.1.0 to v1.2.0. It has not been dispatched here; publishing requires the explicit `RELEASE` confirmation input and the recovery secret.
+- No physical-device or production signing test is claimed. No merge to `main`.
