@@ -84,7 +84,7 @@ jobs:
             "$sdk/apksigner" verify --verbose --print-certs "dist/$name" > "$RUNNER_TEMP/molidovpn-signing/verify.txt"
             grep -Fqi "certificate SHA-256 digest: 3c8849fc59084133e7b09402ee1665563f5329ce3602380a7e05faee8d4e7d7d" "$RUNNER_TEMP/molidovpn-signing/verify.txt"
             "$sdk/aapt2" dump badging "dist/$name" > "$RUNNER_TEMP/molidovpn-signing/badging.txt"
-            grep -F "package: name='io.github.hidooch980.mlhvpn'" "$RUNNER_TEMP/molidovpn-signing/badging.txt"
+            grep -F "package: name='io.github.hidooch980.mlhvpn.fdroid'" "$RUNNER_TEMP/molidovpn-signing/badging.txt"
             grep -F "versionName='1.2.0'" "$RUNNER_TEMP/molidovpn-signing/badging.txt"
             if grep -Fq 'application-debuggable' "$RUNNER_TEMP/molidovpn-signing/badging.txt"; then exit 5; fi
           done
@@ -131,9 +131,9 @@ jobs:
           script: |
             adb install previous.apk
             adb install -r release/MLHVPN_1.2.0-fdroid_universal.apk
-            adb shell dumpsys package io.github.hidooch980.mlhvpn | tee package.txt
+            adb shell dumpsys package io.github.hidooch980.mlhvpn.fdroid | tee package.txt
             grep -F 'versionName=1.2.0' package.txt
-            adb shell am start -W -n io.github.hidooch980.mlhvpn/com.v2ray.ang.ui.main.MainActivity | tee launch.txt
+            adb shell am start -W -n io.github.hidooch980.mlhvpn.fdroid/com.v2ray.ang.ui.main.MainActivity | tee launch.txt
             grep -F 'Status: ok' launch.txt
             sleep 3
             adb exec-out screencap -p > dashboard.png
