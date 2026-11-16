@@ -96,4 +96,6 @@
     <string name="mlh_app_update_hint">Yeni sürümü kontrol edin ve onayınızla yükleyin</string>
     <string name="mlh_about">Hakkında</string>
     <string name="mlh_quality_history_unavailable">Geçmiş eğilim verisi henüz toplanmadı; bu puan yalnızca son değerlendirmeyi gösterir.</string>
+    <string name="mlh_quality_history_title">Kalite geçmişi</string>
+    <string name="mlh_quality_history_empty">Henüz gerçek ölçüm yok. Geçmişi toplamaya başlamak için bağlantı kalite testini çalıştırın.</string>
 </resources>
