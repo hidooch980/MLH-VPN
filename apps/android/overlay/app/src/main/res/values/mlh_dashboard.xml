@@ -96,4 +96,6 @@
     <string name="mlh_nav_protocols_short">Protocols</string>
     <string name="mlh_nav_more_short">More</string>
     <string name="mlh_quality_history_unavailable">Trend history is not collected yet; this score reflects the latest assessment.</string>
+    <string name="mlh_quality_history_title">Quality history</string>
+    <string name="mlh_quality_history_empty">No real measurements yet. Run a connection quality test to start collecting history.</string>
 </resources>
