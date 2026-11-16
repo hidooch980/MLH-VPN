@@ -1,6 +1,7 @@
 package com.v2ray.ang.ui.main
 
 import android.content.Intent
+import android.content.BroadcastReceiver
 import android.net.VpnService
 import android.os.Build
 import android.os.Bundle
@@ -17,6 +18,7 @@ import com.v2ray.ang.enums.PermissionType
 import com.v2ray.ang.extension.toast
 import com.v2ray.ang.extension.toastError
 import com.v2ray.ang.handler.SettingsManager
+import com.v2ray.ang.handler.UpdateInstaller
 import com.v2ray.ang.ui.AboutActivity
 import com.v2ray.ang.ui.base.HelperBaseComponentActivity
 import com.v2ray.ang.ui.checkupdate.CheckUpdateActivity
@@ -25,6 +27,7 @@ import com.v2ray.ang.util.Utils
 class MainActivity : HelperBaseComponentActivity() {
 
     private val updateViewModel: com.v2ray.ang.ui.checkupdate.CheckUpdateViewModel by viewModels()
+    private var updateReceiver: BroadcastReceiver? = null
 
     private val mainViewModel: MainViewModel by viewModels {
         MainViewModel.Factory(application, MainRepository(application as AngApplication))
@@ -37,15 +40,30 @@ class MainActivity : HelperBaseComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        updateReceiver = UpdateInstaller.register(this)
         mainViewModel.onAction(MainAction.Initialize)
         if (savedInstanceState == null) updateViewModel.checkAutomatically()
 
         checkAndRequestPermission(PermissionType.POST_NOTIFICATIONS) {}
     }
 
+    override fun onResume() {
+        super.onResume()
+        UpdateInstaller.openPendingInstall(this)
+    }
+
+    override fun onDestroy() {
+        updateReceiver?.let { runCatching { unregisterReceiver(it) } }
+        updateReceiver = null
+        super.onDestroy()
+    }
+
     @Composable
     override fun ScreenContent() {
-        com.v2ray.ang.ui.checkupdate.UpdateAvailableDialog(updateViewModel)
+        com.v2ray.ang.ui.checkupdate.UpdateAvailableDialog(updateViewModel) { url ->
+            runCatching { UpdateInstaller.startDownload(this, url) }
+                .onFailure { toastError(R.string.toast_failure) }
+        }
         BackHandler { moveTaskToBack(false) }
         MainScreen(
             mainViewModel = mainViewModel,
