@@ -1,11 +1,6 @@
 name: MolidoVPN AI signed production release
 
 on:
-  push:
-    branches: ['feature/molidovpn-ai-redesign']
-    paths:
-      - 'apps/android/**'
-      - '.github/workflows/molidovpn-signed-release.yml'
   workflow_dispatch:
     inputs:
       confirm_release:
