@@ -150,6 +150,16 @@ def prepare(root: Path) -> None:
     changes[path] = replace_once(path.read_text(), '                dataSource.syncSubscriptions()',
                                  '                dataSource.syncSubscriptions()\n                withContext(Dispatchers.Main) { setupGroupTab() }')
 
+    # Android requires an explicit per-app user grant before APK installation.
+    manifest = project / 'app/src/main/AndroidManifest.xml'
+    manifest_text = manifest.read_text()
+    install_permission = '    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />\\n'
+    if 'android.permission.REQUEST_INSTALL_PACKAGES' not in manifest_text:
+        if '<application' not in manifest_text:
+            raise ValueError('Android manifest has no application element')
+        manifest_text = manifest_text.replace('<application', install_permission + '    <application', 1)
+    changes[manifest] = manifest_text
+
     # Validate all replacements before writing any source file. Keep Kotlin namespace
     # unchanged: the HEV JNI entry points depend on com.v2ray.ang.service.
     for path, content in changes.items():
