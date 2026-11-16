@@ -23,6 +23,21 @@
 - اجرای تونل واقعی، IP خروجی، موقعیت، نشت DNS/IP و پایداری فقط با APK روی دستگاه و endpoint/config معتبر اثبات می‌شوند.
 - کلید امضای نسخه‌های ارتقایی باید با کلید قبلی سازگار بماند. کلید خصوصی هرگز در Git یا گفتگو قرار نمی‌گیرد.
 
+## پیشرفت تأییدشده تا 2026-11-16
+
+| مورد | نتیجه | مدرک |
+|---|---|---|
+| انتخاب هوشمند محلی مستقل | پیاده‌سازی و unit-tested | commit `876d4ecb550d58a8c1d58ee7e61ae0efd3ff6e83` |
+| Build Android preview برای ARM64/ARM32/x86/x86_64 | موفق | workflow `43916712315` |
+| Gradle unit tests | 170 موفق، 0 شکست، 0 skipped | artifact گزارش `Android-test-results` |
+| Emulator startup instrumentation | موفق، `OK (1 test)` | artifact `Android-smoke-results` |
+| بررسی نام برنامه، package identity و native libraryهای مورد انتظار | موفق | مرحله Verify در همان workflow |
+| ممیزی اولیه زنجیره Xray/HEV و محدودیت sing-box/WireGuard | مستند شده، ممیزی کامل نیست | [Engine inventory](MOLIDOVPN_AI_ENGINE_INVENTORY.fa.md) |
+| اتصال coordinator به tunnel lifecycle واقعی | انجام نشده | فاز 2/4 |
+| تست تونل واقعی و leak روی گوشی | انجام نشده | فاز 5/7 |
+
+نتیجه CI روی commit کد `876d4ecb550d58a8c1d58ee7e61ae0efd3ff6e83` است. commitهای بعدی تا این تاریخ فقط اسناد roadmap/audit/log را تغییر داده‌اند؛ برای هر تغییر کد Android بعدی CI جدید الزامی است.
+
 ## قواعد اجرای پروژه
 
 1. ابتدا ممیزی read-only، ثبت commit پایه، وضعیت CI و وابستگی‌ها.
@@ -53,7 +68,8 @@
 ## فاز 1 — پایه پایدار Android و تجربه کاربری
 
 ### کارها
-- [ ] تثبیت build reproducibility و ساخت APKهای debug برای ABIهای پشتیبانی‌شده.
+- [x] ساخت APKهای preview/debug برای ABIهای ARM64، ARM32، x86 و x86_64 و اجرای emulator smoke در CI.
+- [ ] اثبات reproducible build مستقل و تثبيت pipeline release.
 - [ ] تکمیل هویت MolidoVPN AI، تم Premium، Side Drawer، RTL/LTR و زبان‌های فارسی/انگلیسی/عربی/ترکی.
 - [ ] تکمیل ده مقصد: داشبورد، کشورها/سرورها، مغز AI، پروتکل‌ها، اشتراک/کانفیگ، امنیت، گزارش‌ها، پشتیبانی/عیب‌یابی، زبان/ظاهر، تنظیمات/درباره/بروزرسانی.
 - [ ] اتصال هر صفحه به state واقعی؛ حذف دکمه‌ها و داده‌های نمایشی فاقد عملکرد.
