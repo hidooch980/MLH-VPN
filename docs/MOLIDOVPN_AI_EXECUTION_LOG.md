@@ -154,3 +154,9 @@
 - The previous signing identity can only be restored by decrypting the existing encrypted backup. The signed-release workflow expects GitHub Actions secret `MLHVPN_BACKUP_PRIVATE_KEY_PEM_B64`; the private recovery key must be supplied by the owner through GitHub Secrets, never in chat or repository. Do not generate a replacement key because it would break upgrade continuity.
 - The signed-release workflow includes certificate fingerprint verification and emulator install-over-upgrade smoke from v1.1.0 to v1.2.0. It has not been dispatched here; publishing requires the explicit `RELEASE` confirmation input and the recovery secret.
 - No physical-device or production signing test is claimed. No merge to `main`.
+
+
+### CI failure found and correction queued (2026-11-16)
+- Run `43926904351` failed at `:app:compileFdroidDebugUnitTestKotlin`; the exact compiler errors were unresolved JUnit 4 imports (`org.junit.Assert` / `org.junit.Test`) in `ProbeFreshnessTest.kt`. This is a test-framework import mismatch, not a production Kotlin compile error.
+- Corrected `ProbeFreshnessTest.kt` to use the JUnit Jupiter imports already used by the neighboring adapter/history tests: commit `7178a87bb13f2eec7c2a91d7cff417db0fdf1802`.
+- A new CI run for that correction is expected from the branch push; it must complete successfully before considering the build gate passed.
