@@ -25,7 +25,7 @@ class MlhStartupTest {
     @Test fun offlineLaunchSeedsSchedulesAndPreservesDeletionAfterRelaunch() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         assertEquals("io.github.hidooch980.mlhvpn.fdroid", context.packageName)
-        assertEquals("MLH VPN", context.getString(R.string.app_name))
+        assertEquals("MolidoVPN AI", context.getString(R.string.app_name))
         ActivityScenario.launch(MainActivity::class.java).use {
             awaitCondition { MmkvManager.decodeSettingsBool(CommunitySubscriptions.INSTALLED_KEY, false) }
             assertTrue(MmkvManager.decodeSettingsBool(AppConfig.PREF_SPEED_ENABLED))
