@@ -41,7 +41,7 @@ private val Good = Color(0xFF58E56E)
 private val Muted = Color(0xFF9EB6C8)
 private val White = Color(0xFFF5FBFF)
 
-private enum class DashboardTab { HOME, COUNTRIES, STATUS, SETTINGS }
+private enum class DashboardTab { HOME, COUNTRIES, AI, PROTOCOLS, MORE }
 private data class Snapshot(
     val connected: Boolean, val connecting: Boolean, val country: String, val code: String?,
     val ip: String, val ping: String, val quality: QualityAssessment?, val elapsed: String,
@@ -86,8 +86,9 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
                 when (tab) {
                     DashboardTab.HOME -> PulseDashboard(snap, state, group.rows, onAction)
                     DashboardTab.COUNTRIES -> CountryDashboard(snap, state, group.rows, onAction)
-                    DashboardTab.STATUS -> ControlDashboard(snap, state, onAction)
-                    DashboardTab.SETTINGS -> MlhSettingsDashboard(onAction, onNavigate)
+                    DashboardTab.AI -> ControlDashboard(snap, state, onAction)
+                    DashboardTab.PROTOCOLS -> ProtocolDashboard()
+                    DashboardTab.MORE -> MlhSettingsDashboard(onAction, onNavigate)
                 }
             }
         }
@@ -272,7 +273,41 @@ private fun countryName(code: String): String = Locale.Builder().setRegion(code)
     }
 }
 
+@Composable private fun ProtocolDashboard() = ScrollPage {
+    Text("پروتکل‌های اتصال", Modifier.fillMaxWidth(), fontSize = 23.sp, fontWeight = FontWeight.Black)
+    Text("فهرست قابلیت‌های مستندشده در نسخه فعلی Android؛ نمایش یک پروتکل به معنی تأیید اتصال واقعی آن نیست.", Modifier.fillMaxWidth(), color = Muted, fontSize = 12.sp)
+    val requested = listOf(
+        MolidoProtocol.VLESS, MolidoProtocol.VMESS, MolidoProtocol.TROJAN,
+        MolidoProtocol.SHADOWSOCKS, MolidoProtocol.HYSTERIA2, MolidoProtocol.WIREGUARD,
+    )
+    requested.forEach { protocol ->
+        val capability = MolidoProtocolRegistry.find(protocol)
+        GlassCard {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(protocol.label, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        if (capability?.evidence == ProtocolEvidence.SOURCE_DOCUMENTED) "پشتیبانی در مستندات هسته فعلی" else "نیازمند بررسی",
+                        color = Mint, fontSize = 11.sp
+                    )
+                }
+                Surface(color = Color(0xFF553F16), shape = RoundedCornerShape(50)) {
+                    Text("تست دستگاه لازم است", Modifier.padding(horizontal = 10.dp, vertical = 6.dp), color = Color(0xFFFFD27A), fontSize = 10.sp)
+                }
+            }
+        }
+    }
+    GlassCard {
+        Text("انتخاب پروتکل از طریق پروفایل", fontWeight = FontWeight.Bold)
+        Text("پروتکل هر اتصال از کانفیگ یا اشتراک واردشده تشخیص داده می‌شود. این صفحه سرور جدید نمی‌سازد و نوع پروفایل را به‌صورت دستی تغییر نمی‌دهد.", color = Muted, fontSize = 12.sp)
+        Text("برای تأیید نهایی هر پروتکل باید با کانفیگ معتبر روی گوشی واقعی، ترافیک، DNS، IPv4/IPv6، اتصال مجدد و جابه‌جایی شبکه آزمایش شود.", color = Muted, fontSize = 12.sp)
+    }
+}
+
 @Composable private fun ControlDashboard(s: Snapshot, state: MainUiState, action: (MainAction) -> Unit) = ScrollPage {
+    Text("مغز هوش مصنوعی محلی", Modifier.fillMaxWidth(), fontSize = 22.sp, fontWeight = FontWeight.Black)
+    Text("تحلیل بر پایه اندازه‌گیری‌های واقعی همین دستگاه؛ بدون نیاز به سرور هوش مصنوعی ابری.", Modifier.fillMaxWidth(), color = Muted, fontSize = 12.sp)
+
     GlassCard(brush = Brush.linearGradient(listOf(Color(0xFF0A6A65), Color(0xFF0A3E50)))) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
             Column { Text(stringResource(if (s.connected) R.string.mlh_connected else R.string.mlh_disconnected), fontSize = 24.sp, fontWeight = FontWeight.Black); Text(s.elapsed, color = White.copy(.8f)) }
@@ -349,7 +384,13 @@ private fun countryName(code: String): String = Locale.Builder().setRegion(code)
 @Composable private fun ScrollPage(content:@Composable ColumnScope.()->Unit)=Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal=18.dp,vertical=4.dp).padding(bottom=18.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(12.dp),content=content)
 
 @Composable private fun BottomNav(selected:DashboardTab,select:(DashboardTab)->Unit)=Surface(color=Color(0xFF061827),shadowElevation=16.dp){
-    NavigationBar(containerColor=Color.Transparent,tonalElevation=0.dp,modifier=Modifier.height(72.dp)){NavItem(DashboardTab.HOME,"⌂","خانه",selected,select);NavItem(DashboardTab.COUNTRIES,"◎","کشورها",selected,select);NavItem(DashboardTab.STATUS,"▥","وضعیت",selected,select);NavItem(DashboardTab.SETTINGS,"⚙","تنظیمات",selected,select)}
+    NavigationBar(containerColor=Color.Transparent,tonalElevation=0.dp,modifier=Modifier.height(76.dp)){
+        NavItem(DashboardTab.HOME,"⌂","خانه",selected,select)
+        NavItem(DashboardTab.COUNTRIES,"◎","سرورها",selected,select)
+        NavItem(DashboardTab.AI,"✧","هوش AI",selected,select)
+        NavItem(DashboardTab.PROTOCOLS,"◇","پروتکل",selected,select)
+        NavItem(DashboardTab.MORE,"☰","بیشتر",selected,select)
+    }
 }
 @Composable private fun RowScope.NavItem(tab:DashboardTab,icon:String,label:String,selected:DashboardTab,select:(DashboardTab)->Unit)=NavigationBarItem(selected==tab,{select(tab)},{Text(icon,fontSize=21.sp)},label={Text(label)},colors=NavigationBarItemDefaults.colors(selectedIconColor=Cyan,selectedTextColor=Cyan,indicatorColor=Color(0xFF0C4A57),unselectedIconColor=Muted,unselectedTextColor=Muted))
 
