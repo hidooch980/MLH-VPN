@@ -51,7 +51,7 @@ object UpdateInstaller {
                 segments[1] == "MLH-VPN" && segments[2] == "releases" &&
                 segments[3] == "download" && segments[4].matches(Regex("v[0-9A-Za-z.-]+")) &&
                 segments[5].matches(
-                    Regex("MLHVPN_[0-9A-Za-z.-]+-fdroid_(arm64-v8a|armeabi-v7a|x86|x86_64|universal)\\\\.apk")
+                    Regex("MLHVPN_[0-9A-Za-z.-]+-fdroid_(arm64-v8a|armeabi-v7a|x86|x86_64|universal)\\.apk")
                 )
         ) { "Untrusted update URL" }
 
