@@ -126,3 +126,10 @@
 - Latest CI run: [43925761547](https://github.com/hidooch980/MLH-VPN/actions/runs/43925761547), HEAD `71bb7bf0c5f048b0c20673ac8856e77e686348a3`; queued when recorded. No Build/test result claimed yet.
 - Prior run [43924969206](https://github.com/hidooch980/MLH-VPN/actions/runs/43924969206) targets an earlier SHA and remains in progress; it cannot validate these later commits.
 - Still not verified: physical-device tunnel operation for each protocol; IPv4/IPv6 and DNS leak behavior; Kill Switch; Wi-Fi/mobile handover; signing-key recovery and upgrade continuity.
+
+
+## 2026-11-16 — Dashboard data integrity
+- Removed the hard-coded synthetic quality trend line from the dashboard; it was not backed by a stored time series.
+- Added explicit localized disclosure (English, Persian, Arabic, Turkish) that trend history is not yet collected and the displayed score represents only the latest assessment.
+- Commits: resource strings `17e9b0cd49e72c79a0e7f980d34cb6ef3c07fda6`, `ab0e703b30174618c26e3a2dfc5af80b71569e34`, `8f4b1add788639a19ed438b7f2e2abf17fe9228e`, `15cc51cac6dce098221a6ed6076201e4d9766c66`; UI `7ea1fb2b1ef8fa7fc554aaee34232edc442431f5`.
+- This is a correctness fix, not a claim that historical analytics are implemented.
