@@ -51,7 +51,6 @@ The standalone Android derivative and overlay use GPL-3.0 (see `apps/android/LIC
 
 See [the current audit](docs/AUDIT_2026-11-13.md), [architecture](docs/ARCHITECTURE.md), [API contract](docs/API_CONTRACT.md), and [roadmap](docs/ROADMAP.md).
 
-
 ## MolidoVPN AI redesign
 
-The active redesign work is tracked on [feature/molidovpn-ai-redesign](https://github.com/hidooch980/MLH-VPN/tree/feature/molidovpn-ai-redesign). See [the redesign blueprint](docs/MOLIDOVPN_AI_REDESIGN.md). The product branding is being migrated while the repository slug and Android application ID remain unchanged until signing identity and upgrade compatibility are verified.
+The active redesign work is tracked on [feature/molidovpn-ai-redesign](https://github.com/hidooch980/MLH-VPN/tree/feature/molidovpn-ai-redesign). See the [redesign blueprint](docs/MOLIDOVPN_AI_REDESIGN.md) and [final product decisions](docs/FINAL_PRODUCT_DECISIONS.md). The product branding is being migrated while the repository slug and Android application ID remain unchanged until signing identity and upgrade compatibility are verified.
