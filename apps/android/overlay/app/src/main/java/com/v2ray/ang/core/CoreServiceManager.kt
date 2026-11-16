@@ -33,6 +33,7 @@ import com.v2ray.ang.util.Utils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.ensureActive
@@ -62,6 +63,7 @@ object CoreServiceManager {
     private var browserDialer: IDialerService? = null
     private var networkMonitor: NetworkMonitor? = null
     private val connectionTestScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    @Volatile private var recoveryJob: Job? = null
 
     @Volatile
     private var isReloading = false
@@ -113,8 +115,8 @@ object CoreServiceManager {
             doStartCoreLoop(service, vpnInterface)
             return true
         } catch (e: Exception) {
-            val message = e.message?.takeUnless { it.isBlank() } ?: e.javaClass.simpleName
-            LogUtil.e(AppConfig.TAG, "StartCore-Manager: $message", e)
+            val message = "Tunnel engine failed to start"
+            LogUtil.e(AppConfig.TAG, "StartCore-Manager: $message (${e.javaClass.simpleName})")
             MessageHelper.sendMsg2UI(service, AppConfig.MSG_STATE_START_FAILURE, message)
             NotificationManager.cancelNotification()
             return false
@@ -141,7 +143,7 @@ object CoreServiceManager {
 
         LogUtil.i(AppConfig.TAG, "StartCore-Manager: Starting core loop for ${config.remarks}")
         val result = CoreConfigManager.getV2rayConfig(service, guid)
-        LogUtil.d(AppConfig.TAG, result.content)
+        // Generated tunnel config can contain credentials and endpoints; never log it.
         if (!result.status) {
             error(result.errorMessage.ifBlank { "Failed to get V2Ray config" })
         }
@@ -202,6 +204,7 @@ object CoreServiceManager {
      */
     fun stopCoreLoop(): Boolean {
         connectionTestScope.coroutineContext.cancelChildren()
+        recoveryJob = null
         val service = getService() ?: return false
 
         networkMonitor?.unregister()
@@ -213,7 +216,7 @@ object CoreServiceManager {
                 try {
                     engineAdapter.stop()
                 } catch (e: Exception) {
-                    LogUtil.e(AppConfig.TAG, "StartCore-Manager: Failed to stop V2Ray loop", e)
+                    LogUtil.e(AppConfig.TAG, "StartCore-Manager: Engine stop failed (${e.javaClass.simpleName})")
                 }
             }
         }
@@ -251,7 +254,7 @@ object CoreServiceManager {
         networkMonitor = NetworkMonitor(
             connectivity = connectivity,
             onUnderlyingNetworksChanged = { networks -> serviceControl?.get()?.setUnderlyingNetworks(networks) },
-            onHandover = { reloadCore() },
+            onHandover = { scheduleCoreRecovery() },
         ).also { it.register() }
     }
 
@@ -264,27 +267,38 @@ object CoreServiceManager {
      *
      * @return True if the core is running again.
      */
-    private fun reloadCore(): Boolean {
+    private fun scheduleCoreRecovery() {
+        if (recoveryJob?.isActive == true || currentConfig == null) return
+        recoveryJob = connectionTestScope.launch {
+            val backoffMillis = longArrayOf(500L, 1_500L, 4_000L)
+            for ((attempt, waitMillis) in backoffMillis.withIndex()) {
+                kotlinx.coroutines.delay(waitMillis)
+                if (getService() == null || currentConfig == null) return@launch
+                if (recoverCoreOnce()) {
+                    LogUtil.i(AppConfig.TAG, "StartCore-Manager: Tunnel recovered after network change")
+                    return@launch
+                }
+                LogUtil.w(AppConfig.TAG, "StartCore-Manager: Recovery attempt ${attempt + 1} failed")
+            }
+            getService()?.let {
+                MessageHelper.sendMsg2UI(it, AppConfig.MSG_STATE_START_FAILURE, "Tunnel recovery failed; reconnect manually")
+            }
+        }
+    }
+
+    /** One bounded recovery attempt. It also handles a core that crashed during handover. */
+    private fun recoverCoreOnce(): Boolean {
         if (isReloading) return false
         val service = getService() ?: return false
-        if (!isRunning()) return false
-
+        val tunFd = currentVpnInterface
+        isReloading = true
         return try {
-            val tunFd = currentVpnInterface
-
-            isReloading = true
-            connectionTestScope.coroutineContext.cancelChildren()
-            LogUtil.i(AppConfig.TAG, "StartCore-Manager: Core reload start...")
-
-            engineAdapter.stop()
+            if (engineAdapter.isRunning()) engineAdapter.stop()
             launchCore(service, tunFd, isReload = true)
-
-            LogUtil.i(AppConfig.TAG, "StartCore-Manager: Core reload finished")
-            true
+            engineAdapter.isRunning()
         } catch (e: Exception) {
-            val message = e.message?.takeUnless { it.isBlank() } ?: e.javaClass.simpleName
-            LogUtil.e(AppConfig.TAG, "StartCore-Manager: Failed to reload core: $message", e)
-            MessageHelper.sendMsg2UI(service, AppConfig.MSG_STATE_START_FAILURE, message)
+            // Never forward native exception text: it can contain config or endpoint details.
+            LogUtil.w(AppConfig.TAG, "StartCore-Manager: Recovery failed (${e.javaClass.simpleName})")
             false
         } finally {
             isReloading = false
