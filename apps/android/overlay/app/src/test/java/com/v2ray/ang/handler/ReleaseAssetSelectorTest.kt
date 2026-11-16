@@ -38,6 +38,15 @@ class ReleaseAssetSelectorTest {
         assertTrue(ReleaseAssetSelector.compareVersions("1.0.0", "0.6.0-beta.2") > 0)
         assertEquals(0, ReleaseAssetSelector.compareVersions("0.6.0-beta.2", "0.6.0-beta.2"))
     }
+    @Test fun `update APK filename validation accepts only known release packages`() {
+        listOf("MLHVPN_1.2.0-fdroid_arm64-v8a.apk", "MLHVPN_1.2.0-fdroid_universal.apk", "MLHVPN_1.2.0-rc.1-fdroid_x86_64.apk").forEach {
+            assertTrue(ReleaseAssetSelector.apkFilenamePattern.matches(it), it)
+        }
+        listOf("MLHVPN_1.2.0-fdroid_arm64-v8a.apk.exe", "MLHVPN_1.2.0-fdroid_unknown.apk", "../MLHVPN_1.2.0-fdroid_universal.apk", "other.apk").forEach {
+            assertFalse(ReleaseAssetSelector.apkFilenamePattern.matches(it), it)
+        }
+    }
+
     @Test fun `missing APK and non release links are rejected`() {
         assertNull(ReleaseAssetSelector.select(release(), listOf("arm64-v8a")))
         val fake = asset("universal").copy(browserDownloadUrl = "https://example.com/app.apk")
