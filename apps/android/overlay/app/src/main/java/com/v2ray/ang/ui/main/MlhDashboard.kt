@@ -395,11 +395,12 @@ private fun countryName(code: String): String = Locale.Builder().setRegion(code)
         Column { Text(stringResource(R.string.mlh_quality_title), fontWeight = FontWeight.Bold, fontSize = 18.sp); Text(stringResource(qualityResource(q?.grade)), color = qualityColor(q?.grade)) }
         Text(q?.score?.toString() ?: "—", color = qualityColor(q?.grade), fontSize = 36.sp, fontWeight = FontWeight.Black)
     }
-    Canvas(Modifier.fillMaxWidth().height(68.dp)) {
-        val values = listOf(.7f,.55f,.66f,.38f,.48f,.24f,.42f,.30f,.36f,.20f); val p = Path()
-        values.forEachIndexed { i,v -> val x=size.width*i/values.lastIndex; val y=size.height*v; if(i==0)p.moveTo(x,y) else p.lineTo(x,y) }
-        drawPath(p, qualityColor(q?.grade), style=Stroke(3.dp.toPx(), cap=StrokeCap.Round))
-    }
+    Text(
+        stringResource(R.string.mlh_quality_history_unavailable),
+        Modifier.fillMaxWidth(),
+        color = Muted,
+        fontSize = 11.sp,
+    )
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         QualityDetail(stringResource(R.string.mlh_median_ping), q?.medianLatencyMillis?.let { "$it ms" } ?: "—")
         QualityDetail(stringResource(R.string.mlh_jitter), q?.jitterMillis?.let { "$it ms" } ?: "—")
