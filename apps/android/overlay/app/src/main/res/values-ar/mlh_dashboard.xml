@@ -96,4 +96,6 @@
     <string name="mlh_app_update_hint">تحقق من إصدار جديد وثبّته بعد موافقتك</string>
     <string name="mlh_about">حول التطبيق</string>
     <string name="mlh_quality_history_unavailable">لم يُسجَّل سجل الاتجاه بعد؛ تعكس هذه الدرجة آخر تقييم فقط.</string>
+    <string name="mlh_quality_history_title">سجل الجودة</string>
+    <string name="mlh_quality_history_empty">لا توجد قياسات فعلية بعد. شغّل اختبار جودة الاتصال لبدء جمع السجل.</string>
 </resources>
