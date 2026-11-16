@@ -95,4 +95,5 @@
     <string name="mlh_nav_ai_short">هوش مصنوعی</string>
     <string name="mlh_nav_protocols_short">پروتکل</string>
     <string name="mlh_nav_more_short">بیشتر</string>
+    <string name="mlh_quality_history_unavailable">هنوز تاریخچه روند ثبت نشده است؛ این امتیاز فقط ارزیابی اخیر را نشان می‌دهد.</string>
 </resources>
