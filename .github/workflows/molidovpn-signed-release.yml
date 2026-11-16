@@ -26,13 +26,17 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Validate release identity and signing secrets
         env:
-          SIGNING_KEY_B64: ${{ secrets.MOLIDO_ANDROID_SIGNING_KEY_PK8_B64 }}
-          SIGNING_CERT_B64: ${{ secrets.MOLIDO_ANDROID_SIGNING_CERT_PEM_B64 }}
+          ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS_VALUE: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD_VALUE: ${{ secrets.ANDROID_KEY_PASSWORD }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          test -n "$SIGNING_KEY_B64" || { echo "Missing MOLIDO_ANDROID_SIGNING_KEY_PK8_B64 secret"; exit 2; }
-          test -n "$SIGNING_CERT_B64" || { echo "Missing MOLIDO_ANDROID_SIGNING_CERT_PEM_B64 secret"; exit 2; }
+          test -n "$ANDROID_KEYSTORE_B64" || { echo "Missing existing ANDROID_KEYSTORE_BASE64 secret"; exit 2; }
+          test -n "$ANDROID_STORE_PASSWORD" || { echo "Missing existing ANDROID_KEYSTORE_PASSWORD secret"; exit 2; }
+          test -n "$ANDROID_KEY_ALIAS_VALUE" || { echo "Missing existing ANDROID_KEY_ALIAS secret"; exit 2; }
+          test -n "$ANDROID_KEY_PASSWORD_VALUE" || { echo "Missing existing ANDROID_KEY_PASSWORD secret"; exit 2; }
           if gh release view v1.2.0 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "v1.2.0 already exists; refusing to overwrite a release"; exit 3
           fi
@@ -64,18 +68,30 @@ jobs:
         run: bash apps/android/build.sh "$PWD/work/android" release
       - name: Sign with the established MolidoVPN release identity
         env:
-          SIGNING_KEY_B64: ${{ secrets.MOLIDO_ANDROID_SIGNING_KEY_PK8_B64 }}
-          SIGNING_CERT_B64: ${{ secrets.MOLIDO_ANDROID_SIGNING_CERT_PEM_B64 }}
+          ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
           set -euo pipefail
           umask 077
           mkdir -p "$RUNNER_TEMP/molidovpn-signing" dist
-          printf '%s' "$SIGNING_KEY_B64" | base64 --decode > "$RUNNER_TEMP/molidovpn-signing/key.pk8"
-          printf '%s' "$SIGNING_CERT_B64" | base64 --decode > "$RUNNER_TEMP/molidovpn-signing/cert.pem"
-          unset SIGNING_KEY_B64 SIGNING_CERT_B64
+          printf '%s' "$ANDROID_KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/molidovpn-signing/release.keystore"
+          unset ANDROID_KEYSTORE_B64
+          tmp_password="$(openssl rand -hex 24)"
+          keytool -importkeystore -noprompt \
+            -srckeystore "$RUNNER_TEMP/molidovpn-signing/release.keystore" \
+            -srcstorepass "$ANDROID_STORE_PASSWORD" -srcalias "$ANDROID_KEY_ALIAS_VALUE" \
+            -srckeypass "$ANDROID_KEY_PASSWORD_VALUE" \
+            -destkeystore "$RUNNER_TEMP/molidovpn-signing/release.p12" \
+            -deststoretype PKCS12 -deststorepass "$tmp_password" -destkeypass "$tmp_password"
+          unset ANDROID_STORE_PASSWORD ANDROID_KEY_ALIAS_VALUE ANDROID_KEY_PASSWORD_VALUE
+          openssl pkcs12 -in "$RUNNER_TEMP/molidovpn-signing/release.p12" -passin "pass:$tmp_password" -nocerts -nodes -out "$RUNNER_TEMP/molidovpn-signing/key.pem"
+          openssl pkcs12 -in "$RUNNER_TEMP/molidovpn-signing/release.p12" -passin "pass:$tmp_password" -clcerts -nokeys -out "$RUNNER_TEMP/molidovpn-signing/cert.pem"
+          openssl pkcs8 -topk8 -nocrypt -in "$RUNNER_TEMP/molidovpn-signing/key.pem" -outform DER -out "$RUNNER_TEMP/molidovpn-signing/key.pk8"
+          rm -f "$RUNNER_TEMP/molidovpn-signing/key.pem" "$RUNNER_TEMP/molidovpn-signing/release.keystore" "$RUNNER_TEMP/molidovpn-signing/release.p12"
+          unset tmp_password
           expected='3C8849FC59084133E7B09402EE1665563F5329CE3602380A7E05FAEE8D4E7D7D'
           actual=$(openssl x509 -in "$RUNNER_TEMP/molidovpn-signing/cert.pem" -noout -fingerprint -sha256 | cut -d= -f2 | tr -d ':')
-          test "$actual" = "$expected" || { echo "Signing certificate does not match installed 1.1.0 identity"; exit 4; }
+          test "$actual" = "$expected" || { echo "Existing keystore does not match installed 1.1.0 identity"; exit 4; }
           sdk="$ANDROID_HOME/build-tools/37.0.0"
           for apk in work/android/V2rayNG/app/build/outputs/apk/fdroid/release/*.apk; do
             name=$(basename "$apk")
