@@ -15,6 +15,8 @@ import com.v2ray.ang.core.MolidoProtocol
 import com.v2ray.ang.core.SmartEngineOrchestrator
 import com.v2ray.ang.core.SmartSelectionStore
 import com.v2ray.ang.core.ProbeFreshness
+import com.v2ray.ang.core.QualityHistoryStore
+import com.v2ray.ang.core.QualityHistorySample
 import com.v2ray.ang.core.ConnectionModePolicy
 import com.v2ray.ang.dto.ConnectionTestResult
 import com.v2ray.ang.dto.GroupMapItem
@@ -87,9 +89,11 @@ class MainViewModel(
     private val preloadDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
 
     // ---------- UI state ----------
+    private val qualityHistoryStore = QualityHistoryStore(application)
     private val _uiState = MutableStateFlow(
         MainUiState(
             selectedGroupId = dataSource.getSelectedSubscriptionId(),
+            qualityHistory = qualityHistoryStore.read(),
             selectedGuid = dataSource.getSelectServer(),
             isFavorite = SmartSelectionStore.isFavorite(dataSource.getSelectServer()),
             doubleColumnDisplay = dataSource.getDoubleColumnDisplay(),
@@ -212,7 +216,22 @@ class MainViewModel(
                         )
                     }
                     activeQualityProbe = null
-                    _uiState.update { it.copy(qualityAssessment = assessment) }
+                    qualityHistoryStore.record(
+                        QualityHistorySample(
+                            timestampMillis = System.currentTimeMillis(),
+                            score = assessment.score,
+                            medianLatencyMillis = assessment.medianLatencyMillis,
+                            jitterMillis = assessment.jitterMillis,
+                            failurePercent = assessment.failurePercent,
+                            throughputBytesPerSecond = assessment.throughputBytesPerSecond,
+                        )
+                    )
+                    _uiState.update {
+                        it.copy(
+                            qualityAssessment = assessment,
+                            qualityHistory = qualityHistoryStore.read(),
+                        )
+                    }
                 }
                 _uiState.update { it.copy(isTesting = testRequests.isTesting, status = MainStatus.ConnectionTest(event.result)) }
             }
