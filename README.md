@@ -53,4 +53,4 @@ See [the current audit](docs/AUDIT_2026-11-13.md), [architecture](docs/ARCHITECT
 
 ## MolidoVPN AI redesign
 
-The active redesign work is tracked on [feature/molidovpn-ai-redesign](https://github.com/hidooch980/MLH-VPN/tree/feature/molidovpn-ai-redesign). See the [redesign blueprint](docs/MOLIDOVPN_AI_REDESIGN.md) and [final product decisions](docs/FINAL_PRODUCT_DECISIONS.md). The product branding is being migrated while the repository slug and Android application ID remain unchanged until signing identity and upgrade compatibility are verified.
+The active redesign work is tracked on [feature/molidovpn-ai-redesign](https://github.com/hidooch980/MLH-VPN/tree/feature/molidovpn-ai-redesign). See the [redesign blueprint](docs/MOLIDOVPN_AI_REDESIGN.md), [Persian UI specification](docs/MOLIDOVPN_AI_UI_SPEC_FA.md), and [final product decisions](docs/FINAL_PRODUCT_DECISIONS.md). The product branding is being migrated while the repository slug and Android application ID remain unchanged until signing identity and upgrade compatibility are verified.
