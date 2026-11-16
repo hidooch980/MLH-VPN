@@ -17,6 +17,18 @@ interface EngineAdapter {
  * The only engine adapter enabled by current build evidence. Other protocol families must not be
  * registered as independent engines until their native runtime and device acceptance are proven.
  */
+enum class EngineOperation { START, STOP, STATUS }
+
+class EngineAdapterException(
+    val engineId: String,
+    val operation: EngineOperation,
+    cause: Exception,
+) : IllegalStateException("Engine '$engineId' $operation failed", cause)
+
+/**
+ * Adapter failures carry a stable engine/operation identity for diagnostics. Config contents,
+ * credentials and server addresses are deliberately excluded from the exception message.
+ */
 class XrayCoreEngineAdapter(
     private val controller: CoreController,
 ) : EngineAdapter {
@@ -24,12 +36,24 @@ class XrayCoreEngineAdapter(
 
     override fun start(config: String, tunFileDescriptor: Int) {
         require(config.isNotBlank()) { "Engine config must not be blank" }
-        controller.startLoop(config, tunFileDescriptor)
+        try {
+            controller.startLoop(config, tunFileDescriptor)
+        } catch (e: Exception) {
+            throw EngineAdapterException(engineId, EngineOperation.START, e)
+        }
     }
 
     override fun stop() {
-        if (controller.isRunning) controller.stopLoop()
+        try {
+            if (controller.isRunning) controller.stopLoop()
+        } catch (e: Exception) {
+            throw EngineAdapterException(engineId, EngineOperation.STOP, e)
+        }
     }
 
-    override fun isRunning(): Boolean = controller.isRunning
+    override fun isRunning(): Boolean = try {
+        controller.isRunning
+    } catch (e: Exception) {
+        throw EngineAdapterException(engineId, EngineOperation.STATUS, e)
+    }
 }
