@@ -47,7 +47,7 @@ object SmartQualityEngine {
             .sorted()
         val attempted = evidence.attempted.coerceAtLeast(evidence.latencyMillis.size).coerceAtLeast(1)
         val failures = (attempted - successful.size).coerceAtLeast(0)
-        val failurePercent = (failures * 100.0 / attempted).roundToLong().toInt()
+        val failurePercent = ((failures.toLong() * 100L) / attempted.toLong()).toInt()
         val median = successful.medianOrNull()
         val jitter = median?.let { center ->
             successful.map { abs(it - center) }.average().roundToLong()
