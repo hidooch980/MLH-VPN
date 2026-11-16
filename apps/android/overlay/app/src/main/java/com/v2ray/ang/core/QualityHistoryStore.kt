@@ -63,11 +63,12 @@ internal object QualityHistoryCodec {
         sample.takeIf { it.isValid() }
     }.toList()
 
-    private fun QualityHistorySample.isValid(): Boolean =
-        timestampMillis > 0 &&
-            score in 0..100 &&
-            (medianLatencyMillis == null || medianLatencyMillis >= 0) &&
-            (jitterMillis == null || jitterMillis >= 0) &&
-            failurePercent in 0..100 &&
-            (throughputBytesPerSecond == null || throughputBytesPerSecond >= 0)
 }
+
+private fun QualityHistorySample.isValid(): Boolean =
+    timestampMillis > 0 &&
+        score in 0..100 &&
+        (medianLatencyMillis == null || medianLatencyMillis >= 0) &&
+        (jitterMillis == null || jitterMillis >= 0) &&
+        failurePercent in 0..100 &&
+        (throughputBytesPerSecond == null || throughputBytesPerSecond >= 0)
