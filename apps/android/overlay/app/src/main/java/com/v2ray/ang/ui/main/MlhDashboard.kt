@@ -78,7 +78,9 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
         traffic?.sent?.let { formatTraffic(it.toDouble()) } ?: unavailable,
         traffic?.received?.let { formatTraffic(it.toDouble()) } ?: unavailable,
     )
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+    val appLanguage = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]?.language ?: Locale.getDefault().language
+    val appLayoutDirection = if (appLanguage in setOf("ar", "fa", "he", "ur")) LayoutDirection.Rtl else LayoutDirection.Ltr
+    CompositionLocalProvider(LocalLayoutDirection provides appLayoutDirection) {
         ModalNavigationDrawer(
             drawerState = drawerState,
             scrimColor = Ink.copy(alpha = .72f),
@@ -86,11 +88,11 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
                 ModalDrawerSheet(drawerContainerColor = Night, drawerContentColor = White) {
                     Text("MolidoVPN AI", Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 24.dp), fontSize = 22.sp, fontWeight = FontWeight.Black)
                     listOf(
-                        Triple(DashboardTab.HOME, "⌂", "داشبورد هوشمند"),
-                        Triple(DashboardTab.COUNTRIES, "◎", "کشورها و سرورها"),
-                        Triple(DashboardTab.AI, "✧", "مغز هوش مصنوعی"),
-                        Triple(DashboardTab.PROTOCOLS, "◇", "پروتکل‌ها"),
-                        Triple(DashboardTab.MORE, "☰", "تنظیمات و بیشتر"),
+                        Triple(DashboardTab.HOME, "⌂", stringResource(R.string.mlh_nav_home)),
+                        Triple(DashboardTab.COUNTRIES, "◎", stringResource(R.string.mlh_nav_servers)),
+                        Triple(DashboardTab.AI, "✧", stringResource(R.string.mlh_nav_ai)),
+                        Triple(DashboardTab.PROTOCOLS, "◇", stringResource(R.string.mlh_nav_protocols)),
+                        Triple(DashboardTab.MORE, "☰", stringResource(R.string.mlh_nav_more)),
                     ).forEach { (destination, glyph, label) ->
                         NavigationDrawerItem(
                             label = { Text(label, fontWeight = if (tab == destination) FontWeight.Bold else FontWeight.Normal) },
@@ -106,7 +108,7 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
                         )
                     }
                     Spacer(Modifier.height(18.dp))
-                    Text("نسخه Premium • طراحی محلی و حریم خصوصی‌محور", Modifier.padding(horizontal = 22.dp), color = Muted, fontSize = 10.sp)
+                    Text(stringResource(R.string.mlh_premium_tag), Modifier.padding(horizontal = 22.dp), color = Muted, fontSize = 10.sp)
                 }
             },
         ) {
@@ -211,7 +213,7 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
             CountryBadge(s.code)
             Column { Text(stringResource(R.string.mlh_exit), color = Muted, fontSize = 12.sp); Text(s.country, fontWeight = FontWeight.Bold, fontSize = 18.sp); Text(s.ip, color = Muted, fontSize = 11.sp) }
         }
-        Column(horizontalAlignment = Alignment.End) { Text(if (s.connected) "اتصال فعال" else "بررسی نشده", color = if (s.connected) Mint else Muted, fontSize = 11.sp); Text("‹", fontSize = 28.sp) }
+        Column(horizontalAlignment = Alignment.End) { Text(if (s.connected) stringResource(R.string.mlh_status_active) else stringResource(R.string.mlh_status_not_checked), color = if (s.connected) Mint else Muted, fontSize = 11.sp); Text("‹", fontSize = 28.sp) }
     }
 }
 
@@ -273,14 +275,14 @@ private fun countryName(code: String): String = Locale.Builder().setRegion(code)
         ExitCard(s)
         GlassCard {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                Column { Text("اتصال هوشمند", fontWeight = FontWeight.Bold, fontSize = 17.sp); Text("انتخاب خودکار بهترین سرویس اندازه‌گیری‌شده", color = Muted, fontSize = 12.sp) }
+                Column { Text(stringResource(R.string.mlh_smart_connection), fontWeight = FontWeight.Bold, fontSize = 17.sp); Text(stringResource(R.string.mlh_smart_connection_hint), color = Muted, fontSize = 12.sp) }
                 Text(s.quality?.score?.toString() ?: "—", color = Good, fontSize = 29.sp, fontWeight = FontWeight.Black)
             }
         }
-        Text("بهترین سرویس‌های پیشنهادی", Modifier.fillMaxWidth(), fontWeight = FontWeight.Black, fontSize = 19.sp)
+        Text(stringResource(R.string.mlh_recommended_servers), Modifier.fillMaxWidth(), fontWeight = FontWeight.Black, fontSize = 19.sp)
         if (ranked.isEmpty()) GlassCard {
-            Text("هنوز نتیجه‌ای اندازه‌گیری نشده است", Modifier.fillMaxWidth(), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold)
-            Text("آزمایش هوشمند را اجرا کنید تا بهترین سرویس‌ها رتبه‌بندی شوند.", Modifier.fillMaxWidth(), color = Muted, textAlign = TextAlign.Center, fontSize = 12.sp)
+            Text(stringResource(R.string.mlh_no_measurement), Modifier.fillMaxWidth(), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.mlh_run_smart_test_hint), Modifier.fillMaxWidth(), color = Muted, textAlign = TextAlign.Center, fontSize = 12.sp)
         } else ranked.forEachIndexed { i, server -> ServerRow(i + 1, server, server.guid == state.selectedGuid) { action(MainAction.SelectServer(server.guid)) } }
         SmartButton(state, action)
     }
@@ -299,7 +301,7 @@ private fun countryName(code: String): String = Locale.Builder().setRegion(code)
             val t = when (code) { "DE","NL","FR","GB" -> Offset(size.width*.53f,size.height*.35f); "US","CA" -> Offset(size.width*.21f,size.height*.38f); "JP","SG" -> Offset(size.width*.82f,size.height*.50f); else -> Offset(size.width*.61f,size.height*.46f) }
             drawCircle(Mint.copy(.18f), 20.dp.toPx(), t); drawCircle(Mint, 7.dp.toPx(), t); drawCircle(White, 2.5.dp.toPx(), t)
         }
-        Text("نمایش تقریبی منطقه خروجی", Modifier.align(Alignment.BottomCenter).padding(12.dp), color = Muted, fontSize = 11.sp)
+        Text(stringResource(R.string.mlh_approx_region), Modifier.align(Alignment.BottomCenter).padding(12.dp), color = Muted, fontSize = 11.sp)
     }
 }
 
@@ -307,15 +309,15 @@ private fun countryName(code: String): String = Locale.Builder().setRegion(code)
     Surface(Modifier.fillMaxWidth().clickable(onClick = click), color = if (selected) Color(0xFF104B58) else Panel, shape = RoundedCornerShape(18.dp), border = androidx.compose.foundation.BorderStroke(1.dp, if (selected) Cyan else White.copy(.07f))) {
         Row(Modifier.padding(15.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             CircleLabel(rank.toString(), if (rank == 1) Mint else PanelLight, if (rank == 1) Ink else White)
-            Column(Modifier.weight(1f)) { Text("سرویس هوشمند $rank", fontWeight = FontWeight.Bold); Text(if (selected) "انتخاب فعلی" else "آماده اتصال", color = if (selected) Mint else Muted, fontSize = 11.sp) }
-            Column(horizontalAlignment = Alignment.End) { Text("${server.testDelayMillis} ms", fontWeight = FontWeight.Bold); Text("امتیاز ${latencyScore(server.testDelayMillis)}", color = Good, fontSize = 11.sp) }
+            Column(Modifier.weight(1f)) { Text(stringResource(R.string.mlh_service_rank, rank), fontWeight = FontWeight.Bold); Text(if (selected) stringResource(R.string.mlh_selected_now) else stringResource(R.string.mlh_ready_to_connect), color = if (selected) Mint else Muted, fontSize = 11.sp) }
+            Column(horizontalAlignment = Alignment.End) { Text("${server.testDelayMillis} ms", fontWeight = FontWeight.Bold); Text(stringResource(R.string.mlh_score, latencyScore(server.testDelayMillis)), color = Good, fontSize = 11.sp) }
         }
     }
 }
 
 @Composable private fun ProtocolDashboard() = ScrollPage {
-    Text("پروتکل‌های اتصال", Modifier.fillMaxWidth(), fontSize = 23.sp, fontWeight = FontWeight.Black)
-    Text("فهرست قابلیت‌های مستندشده در نسخه فعلی Android؛ نمایش یک پروتکل به معنی تأیید اتصال واقعی آن نیست.", Modifier.fillMaxWidth(), color = Muted, fontSize = 12.sp)
+    Text(stringResource(R.string.mlh_protocols_title), Modifier.fillMaxWidth(), fontSize = 23.sp, fontWeight = FontWeight.Black)
+    Text(stringResource(R.string.mlh_protocols_disclaimer), Modifier.fillMaxWidth(), color = Muted, fontSize = 12.sp)
     val requested = listOf(
         MolidoProtocol.VLESS, MolidoProtocol.VMESS, MolidoProtocol.TROJAN,
         MolidoProtocol.SHADOWSOCKS, MolidoProtocol.HYSTERIA2, MolidoProtocol.WIREGUARD,
@@ -327,26 +329,26 @@ private fun countryName(code: String): String = Locale.Builder().setRegion(code)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(protocol.label, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                     Text(
-                        if (capability?.evidence == ProtocolEvidence.SOURCE_DOCUMENTED) "پشتیبانی در مستندات هسته فعلی" else "نیازمند بررسی",
+                        if (capability?.evidence == ProtocolEvidence.SOURCE_DOCUMENTED) stringResource(R.string.mlh_documented_core) else stringResource(R.string.mlh_needs_review),
                         color = Mint, fontSize = 11.sp
                     )
                 }
                 Surface(color = Color(0xFF553F16), shape = RoundedCornerShape(50)) {
-                    Text("تست دستگاه لازم است", Modifier.padding(horizontal = 10.dp, vertical = 6.dp), color = Color(0xFFFFD27A), fontSize = 10.sp)
+                    Text(stringResource(R.string.mlh_device_test_required), Modifier.padding(horizontal = 10.dp, vertical = 6.dp), color = Color(0xFFFFD27A), fontSize = 10.sp)
                 }
             }
         }
     }
     GlassCard {
-        Text("انتخاب پروتکل از طریق پروفایل", fontWeight = FontWeight.Bold)
-        Text("پروتکل هر اتصال از کانفیگ یا اشتراک واردشده تشخیص داده می‌شود. این صفحه سرور جدید نمی‌سازد و نوع پروفایل را به‌صورت دستی تغییر نمی‌دهد.", color = Muted, fontSize = 12.sp)
-        Text("برای تأیید نهایی هر پروتکل باید با کانفیگ معتبر روی گوشی واقعی، ترافیک، DNS، IPv4/IPv6، اتصال مجدد و جابه‌جایی شبکه آزمایش شود.", color = Muted, fontSize = 12.sp)
+        Text(stringResource(R.string.mlh_protocol_profile_title), fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.mlh_protocol_profile_description), color = Muted, fontSize = 12.sp)
+        Text(stringResource(R.string.mlh_protocol_device_test_note), color = Muted, fontSize = 12.sp)
     }
 }
 
 @Composable private fun ControlDashboard(s: Snapshot, state: MainUiState, action: (MainAction) -> Unit) = ScrollPage {
-    Text("مغز هوش مصنوعی محلی", Modifier.fillMaxWidth(), fontSize = 22.sp, fontWeight = FontWeight.Black)
-    Text("تحلیل بر پایه اندازه‌گیری‌های واقعی همین دستگاه؛ بدون نیاز به سرور هوش مصنوعی ابری.", Modifier.fillMaxWidth(), color = Muted, fontSize = 12.sp)
+    Text(stringResource(R.string.mlh_ai_local_title), Modifier.fillMaxWidth(), fontSize = 22.sp, fontWeight = FontWeight.Black)
+    Text(stringResource(R.string.mlh_ai_local_description), Modifier.fillMaxWidth(), color = Muted, fontSize = 12.sp)
 
     GlassCard(brush = Brush.linearGradient(listOf(Color(0xFF0A6A65), Color(0xFF0A3E50)))) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
@@ -357,12 +359,12 @@ private fun countryName(code: String): String = Locale.Builder().setRegion(code)
     }
     QualityChart(s.quality)
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        ControlTile("⌁", "وضعیت شبکه", if (s.connected) "متصل" else "قطع", s.ping, Modifier.weight(1f))
-        ControlTile("⬡", "مسیر DNS", "نیازمند آزمون", "آزمون نشت لازم است", Modifier.weight(1f))
+        ControlTile("⌁", stringResource(R.string.mlh_network_status), if (s.connected) "متصل" else "قطع", s.ping, Modifier.weight(1f))
+        ControlTile("⬡", stringResource(R.string.mlh_dns_route), stringResource(R.string.mlh_test_required), stringResource(R.string.mlh_leak_test_required), Modifier.weight(1f))
     }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        ControlTile("★", "سرویس مورد علاقه", if (state.isFavorite) "ذخیره شده" else "انتخاب نشده", s.country, Modifier.weight(1f))
-        ControlTile("◷", "خروجی فعلی", s.country, s.ip, Modifier.weight(1f))
+        ControlTile("★", stringResource(R.string.mlh_favorite_service), if (state.isFavorite) stringResource(R.string.mlh_saved) else stringResource(R.string.mlh_not_selected), s.country, Modifier.weight(1f))
+        ControlTile("◷", stringResource(R.string.mlh_current_exit), s.country, s.ip, Modifier.weight(1f))
     }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Metric("↑", stringResource(R.string.mlh_sent_total), s.sent, Modifier.weight(1f)); Metric("↓", stringResource(R.string.mlh_received_total), s.received, Modifier.weight(1f))
@@ -373,7 +375,7 @@ private fun countryName(code: String): String = Locale.Builder().setRegion(code)
 
 @Composable private fun QualityChart(q: QualityAssessment?) = GlassCard {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Column { Text("کیفیت اتصال", fontWeight = FontWeight.Bold, fontSize = 18.sp); Text(stringResource(qualityResource(q?.grade)), color = qualityColor(q?.grade)) }
+        Column { Text(stringResource(R.string.mlh_quality_title), fontWeight = FontWeight.Bold, fontSize = 18.sp); Text(stringResource(qualityResource(q?.grade)), color = qualityColor(q?.grade)) }
         Text(q?.score?.toString() ?: "—", color = qualityColor(q?.grade), fontSize = 36.sp, fontWeight = FontWeight.Black)
     }
     Canvas(Modifier.fillMaxWidth().height(68.dp)) {
@@ -425,11 +427,11 @@ private fun countryName(code: String): String = Locale.Builder().setRegion(code)
 
 @Composable private fun BottomNav(selected:DashboardTab,select:(DashboardTab)->Unit)=Surface(color=Color(0xFF061827),shadowElevation=16.dp){
     NavigationBar(containerColor=Color.Transparent,tonalElevation=0.dp,modifier=Modifier.height(76.dp)){
-        NavItem(DashboardTab.HOME,"⌂","خانه",selected,select)
-        NavItem(DashboardTab.COUNTRIES,"◎","سرورها",selected,select)
-        NavItem(DashboardTab.AI,"✧","هوش AI",selected,select)
-        NavItem(DashboardTab.PROTOCOLS,"◇","پروتکل",selected,select)
-        NavItem(DashboardTab.MORE,"☰","بیشتر",selected,select)
+        NavItem(DashboardTab.HOME,"⌂",stringResource(R.string.mlh_nav_home_short),selected,select)
+        NavItem(DashboardTab.COUNTRIES,"◎",stringResource(R.string.mlh_nav_servers_short),selected,select)
+        NavItem(DashboardTab.AI,"✧",stringResource(R.string.mlh_nav_ai_short),selected,select)
+        NavItem(DashboardTab.PROTOCOLS,"◇",stringResource(R.string.mlh_nav_protocols_short),selected,select)
+        NavItem(DashboardTab.MORE,"☰",stringResource(R.string.mlh_nav_more_short),selected,select)
     }
 }
 @Composable private fun RowScope.NavItem(tab:DashboardTab,icon:String,label:String,selected:DashboardTab,select:(DashboardTab)->Unit)=NavigationBarItem(selected==tab,{select(tab)},{Text(icon,fontSize=21.sp)},label={Text(label)},colors=NavigationBarItemDefaults.colors(selectedIconColor=Cyan,selectedTextColor=Cyan,indicatorColor=Color(0xFF0C4A57),unselectedIconColor=Muted,unselectedTextColor=Muted))
