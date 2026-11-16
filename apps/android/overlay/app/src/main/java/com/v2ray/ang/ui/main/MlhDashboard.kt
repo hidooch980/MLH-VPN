@@ -83,7 +83,7 @@ fun MainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onN
             drawerState = drawerState,
             scrimColor = Ink.copy(alpha = .72f),
             drawerContent = {
-                NavigationDrawerSheet(drawerContainerColor = Night, drawerContentColor = White) {
+                ModalDrawerSheet(drawerContainerColor = Night, drawerContentColor = White) {
                     Text("MolidoVPN AI", Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 24.dp), fontSize = 22.sp, fontWeight = FontWeight.Black)
                     listOf(
                         Triple(DashboardTab.HOME, "⌂", "داشبورد هوشمند"),
