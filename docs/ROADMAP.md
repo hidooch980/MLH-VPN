@@ -55,3 +55,8 @@
 No production claim until a real client tunnel has passed end-to-end tests on every advertised platform. No subscription sale until entitlement enforcement, abuse controls, billing, refund/cancellation, support, privacy and applicable legal requirements are reviewed.
 
 See [the repository audit](AUDIT_2026-11-13.md) and [API contract](API_CONTRACT.md).
+
+
+## MolidoVPN AI Android client
+
+The detailed, Persian-language execution plan for the MolidoVPN AI Android client, tunnel engines, server discovery, local smart selection, privacy, QA and stable release is maintained in [MOLIDOVPN_AI_MASTER_ROADMAP.fa.md](MOLIDOVPN_AI_MASTER_ROADMAP.fa.md). This client roadmap is separate from the control-plane/server-fleet milestones above.
