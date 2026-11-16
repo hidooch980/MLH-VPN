@@ -61,3 +61,14 @@ https://github.com/hidooch980/MLH-VPN/actions/runs/43819934493
 ## Release decision
 
 **Not ready for production release.** Continue only on the feature branch. Do not merge to `main`, publish a production APK, or advertise all six protocol families as verified until CI, source review, signing continuity and physical-device acceptance are complete.
+
+## UI redesign work added after the source audit
+
+- Added `docs/MOLIDOVPN_AI_UI_SPEC_FA.md` as the Persian RTL/LTR screen and interaction specification.
+- Expanded the Android bottom navigation from four to five destinations: Home, Servers, AI, Protocols and More.
+- Added a protocol catalogue screen driven by `MolidoProtocolRegistry`; it lists VLESS, VMess, Trojan, Shadowsocks, Hysteria2 and WireGuard as source-documented and explicitly marks physical-device verification as still required.
+- Added a clear explanation that protocol choice comes from an imported profile; the catalogue does not fabricate endpoints or rewrite profile protocols.
+- Added an AI page heading/context around the existing on-device quality assessment and real server-test action.
+- Linked the Persian UI specification from the repository README.
+
+**Verification status for this UI change:** source edits were committed to the feature branch. No Android build, unit test, emulator run, or physical-device test result has yet been retrieved for these exact commits. Do not treat the new UI as build-verified until the Standalone Android APK workflow completes successfully.
