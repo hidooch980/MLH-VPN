@@ -95,4 +95,5 @@
     <string name="mlh_nav_ai_short">AI</string>
     <string name="mlh_nav_protocols_short">Protocols</string>
     <string name="mlh_nav_more_short">More</string>
+    <string name="mlh_quality_history_unavailable">Trend history is not collected yet; this score reflects the latest assessment.</string>
 </resources>
